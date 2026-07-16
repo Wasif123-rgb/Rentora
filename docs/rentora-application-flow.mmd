@@ -1,0 +1,45 @@
+flowchart TD
+    A[Landing Page] --> B[Login]
+    A --> C[Registration]
+    C --> B
+
+    B --> D{Select User Role}
+
+    D -->|Manager| M[Manager Dashboard]
+    D -->|Tenant| T[Tenant Dashboard]
+
+    M --> M1[Apartment Management]
+    M --> M2[Flat Management]
+    M --> M3[Tenant Management]
+    M --> M4[Rent Collection]
+    M --> M5[Utility Bill Management]
+    M --> M6[Complaints and Maintenance]
+    M --> M7[Notice Management]
+    M --> M8[Reports]
+
+    T --> T1[View Profile]
+    T --> T2[Rent History]
+    T --> T3[Utility Bills]
+    T --> T4[Submit Complaint]
+    T --> T5[Track Complaint]
+    T --> T6[View Notices]
+
+    M1 --> M
+    M2 --> M
+    M3 --> M
+    M4 --> M
+    M5 --> M
+    M6 --> M
+    M7 --> M
+    M8 --> M
+
+    T1 --> T
+    T2 --> T
+    T3 --> T
+    T4 --> T
+    T5 --> T
+    T6 --> T
+
+    M --> L[Logout]
+    T --> L
+    L --> B
