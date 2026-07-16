@@ -1,7 +1,19 @@
 import { NavLink } from 'react-router-dom';
 
-function Sidebar({ role }) {
-  const managerLinks = [
+type UserRole = 'manager' | 'tenant';
+
+interface SidebarProps {
+  role: UserRole;
+}
+
+interface SidebarLink {
+  label: string;
+  path: string;
+  icon: string;
+}
+
+function Sidebar({ role }: SidebarProps) {
+  const managerLinks: SidebarLink[] = [
     {
       label: 'Dashboard',
       path: '/manager/dashboard',
@@ -9,7 +21,7 @@ function Sidebar({ role }) {
     },
   ];
 
-  const tenantLinks = [
+  const tenantLinks: SidebarLink[] = [
     {
       label: 'Dashboard',
       path: '/tenant/dashboard',
