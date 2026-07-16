@@ -4,7 +4,6 @@ import {
   Routes,
 } from 'react-router-dom';
 
-import Home from './pages/home/Home';
 import AuthLayout from './layouts/AuthLayout';
 import ManagerLayout from './layouts/ManagerLayout';
 import TenantLayout from './layouts/TenantLayout';
@@ -19,7 +18,7 @@ import NotFoundPage from './pages/NotFoundPage';
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      
 
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
