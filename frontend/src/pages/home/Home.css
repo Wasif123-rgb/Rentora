@@ -148,22 +148,6 @@ body {
   color: white;
 }
 
-.nav-btn {
-  border: none;
-  cursor: pointer;
-
-  padding: 12px 22px;
-  border-radius: 12px;
-
-  color: white;
-
-  background: linear-gradient(
-    135deg,
-    var(--primary),
-    var(--secondary)
-  );
-}
-
 /* =========================
    HERO
 ========================= */
@@ -174,7 +158,7 @@ body {
 
   text-align: center;
 
-  padding: 120px 20px;
+  padding: 100px 20px;
   position: relative;
   z-index: 2;
 }
@@ -233,48 +217,6 @@ body {
 
   line-height: 1.8;
   font-size: 1.1rem;
-}
-
-.hero-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-
-  margin-top: 35px;
-}
-
-.primary-btn,
-.cta-btn {
-  border: none;
-  cursor: pointer;
-
-  padding: 16px 30px;
-
-  border-radius: 14px;
-
-  color: white;
-
-  background: linear-gradient(
-    135deg,
-    var(--primary),
-    var(--secondary)
-  );
-
-  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
-}
-
-.secondary-btn {
-  cursor: pointer;
-
-  padding: 16px 30px;
-
-  border-radius: 14px;
-
-  color: white;
-
-  background: rgba(255, 255, 255, 0.05);
-
-  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 /* =========================
@@ -471,44 +413,6 @@ body {
 }
 
 /* =========================
-   CTA
-========================= */
-
-.cta {
-  width: min(1200px, 92%);
-  margin: 120px auto;
-
-  text-align: center;
-
-  padding: 100px 40px;
-
-  border-radius: 36px;
-
-  background:
-    linear-gradient(
-      135deg,
-      rgba(99,102,241,.25),
-      rgba(37,99,235,.20)
-    );
-
-  border: 1px solid rgba(255,255,255,.12);
-
-  backdrop-filter: blur(20px);
-
-  box-shadow:
-    0 20px 60px rgba(37,99,235,.15);
-}
-
-.cta h2 {
-  font-size: 3rem;
-}
-
-.cta p {
-  margin: 20px 0 30px;
-  color: var(--muted);
-}
-
-/* =========================
    FOOTER
 ========================= */
 
@@ -557,10 +461,6 @@ body {
     font-size: 3rem;
   }
 
-  .hero-buttons {
-    flex-direction: column;
-  }
-
   .nav-links a {
     display: none;
   }
@@ -569,8 +469,7 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .section-title h2,
-  .cta h2 {
+  .section-title h2 {
     font-size: 2.2rem;
   }
 }

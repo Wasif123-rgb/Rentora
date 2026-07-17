@@ -62,10 +62,6 @@ export default function Home() {
           <a href="#features">Features</a>
           <a href="#why">Why Rentora</a>
           <a href="/login">Login</a>
-
-          <button className="nav-btn">
-            Get Started
-          </button>
         </div>
       </nav>
 
@@ -86,16 +82,6 @@ export default function Home() {
           together in one modern platform for rental management,
           communication, maintenance requests and payment tracking.
         </p>
-
-        <div className="hero-buttons">
-          <button className="primary-btn">
-            Get Started
-          </button>
-
-          <button className="secondary-btn">
-            Explore Features
-          </button>
-        </div>
 
         {/* FLOATING CARDS */}
         <div className="floating-cards">
@@ -161,24 +147,6 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </section>
-
-      {/* CTA */}
-      <section className="cta">
-        <h2>
-          Ready To Modernize
-          <br />
-          Property Management?
-        </h2>
-
-        <p>
-          Join Rentora and experience a smarter way
-          to manage rentals.
-        </p>
-
-        <button className="cta-btn">
-          Create Account
-        </button>
       </section>
 
       {/* FOOTER */}
