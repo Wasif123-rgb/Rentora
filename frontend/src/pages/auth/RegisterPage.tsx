@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Auth.css";
 
 export default function RegisterPage() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -35,6 +36,11 @@ export default function RegisterPage() {
 
     setError("");
     alert("Registration successful");
+    if (form.role === "manager") {
+      navigate("/manager/dashboard");
+    } else {
+      navigate("/tenant/dashboard");
+    }
   };
 
   return (

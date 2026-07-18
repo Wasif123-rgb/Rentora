@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Auth.css";
 
 export default function LoginPage() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("tenant");
@@ -18,6 +19,11 @@ export default function LoginPage() {
 
     setError("");
     alert("Login successful");
+    if (role === "manager") {
+      navigate("/manager/dashboard");
+    } else {
+      navigate("/tenant/dashboard");
+    }
   };
 
   return (
