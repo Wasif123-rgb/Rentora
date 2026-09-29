@@ -57,6 +57,7 @@ import type {
   NoticeFormValues,
   RecordId,
   RentPayment,
+  UtilityBillFormValues,
 } from '../../types/managerRecords';
 
 import '../../styles/manager-dashboard.css';
@@ -685,6 +686,69 @@ function ManagerDashboard() {
 
   /*
   |--------------------------------------------------------------------------
+  | UTILITY BILL CREATE
+  |--------------------------------------------------------------------------
+  */
+
+  const handleCreateUtilityBill = async (
+    values: UtilityBillFormValues
+  ) => {
+    try {
+      setSubmitting(true);
+      clearMessages();
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/manager/utility-bills`,
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('auth_token') ?? ''}`,
+          },
+          body: JSON.stringify(values),
+        }
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw {
+          status: response.status,
+          data,
+        };
+      }
+
+      if (data.data) {
+        setUtilityBills((current) => [
+          data.data,
+          ...current,
+        ]);
+      }
+
+      setSuccessMessage(
+        'Utility bill created successfully.'
+      );
+
+    } catch (error) {
+      console.error(
+        'Failed to create utility bill:',
+        error
+      );
+
+      setApiError(
+        getErrorMessage(error)
+      );
+
+      throw error;
+
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  /*
+  |--------------------------------------------------------------------------
   | RENDER ACTIVE SECTION
   |--------------------------------------------------------------------------
   */
@@ -746,6 +810,11 @@ function ManagerDashboard() {
         return (
           <UtilitiesSection
             utilityBills={utilityBills}
+            tenants={tenants}
+            onCreate={handleCreateUtilityBill}
+            submitting={submitting}
+            apiError={apiError}
+            successMessage={successMessage}
           />
         );
 

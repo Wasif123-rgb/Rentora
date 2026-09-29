@@ -1607,20 +1607,45 @@ export function RentSection({
 
 type UtilitiesSectionProps = {
   utilityBills: UtilityBill[];
+  tenants: Tenant[];
 
-  onCreate?: (
+  onCreate: (
     values: UtilityBillFormValues
   ) => void | Promise<void>;
+
+  submitting?: boolean;
+  apiError?: string | null;
+  successMessage?: string | null;
 };
 
 export function UtilitiesSection({
   utilityBills,
+  tenants,
+  onCreate,
+  submitting = false,
+  apiError,
+  successMessage,
 }: UtilitiesSectionProps) {
   const [search, setSearch] =
     useState('');
 
   const [status, setStatus] =
     useState('All statuses');
+
+  const [formOpen, setFormOpen] =
+    useState(false);
+
+  const [formError, setFormError] =
+    useState('');
+
+  const [values, setValues] =
+    useState<UtilityBillFormValues>({
+      tenant_id: '',
+      type: '',
+      amount: '',
+      billing_month: '',
+      status: 'unpaid',
+    });
 
   const records = useMemo(() => {
     return utilityBills.filter((item) => {
@@ -1655,18 +1680,84 @@ export function UtilitiesSection({
     status,
   ]);
 
+  const openCreate = () => {
+    setValues({
+      tenant_id: '',
+      type: '',
+      amount: '',
+      billing_month: '',
+      status: 'unpaid',
+    });
+
+    setFormError('');
+    setFormOpen(true);
+  };
+
+  const closeForm = () => {
+    if (submitting) {
+      return;
+    }
+
+    setFormOpen(false);
+    setFormError('');
+  };
+
+  const submitForm = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    if (values.tenant_id === '') {
+      setFormError('Choose a tenant.');
+      return;
+    }
+
+    if (!String(values.type).trim()) {
+      setFormError('Utility type is required.');
+      return;
+    }
+
+    if (
+      values.amount === '' ||
+      Number(values.amount) < 0
+    ) {
+      setFormError(
+        'Amount is required and cannot be negative.'
+      );
+      return;
+    }
+
+    if (!String(values.billing_month).trim()) {
+      setFormError('Billing month is required.');
+      return;
+    }
+
+    setFormError('');
+
+    try {
+      await onCreate(values);
+      closeForm();
+    } catch {
+      setFormError('Unable to create utility bill.');
+    }
+  };
+
   return (
     <div className="manager-section">
       <ManagerSectionHeader
         eyebrow="Billing"
         title="Utility Bill Management"
-        description="Review utility charges and payment status."
+        description="Create and review utility charges for your tenants."
         actionLabel="Record Utility Bill"
         actionIcon="bi-plus-circle"
-        onAction={() =>
-          window.alert(
-            'Connect the utility bill form here.'
-          )
+        onAction={openCreate}
+      />
+
+      <Feedback
+        message={
+          successMessage ??
+          apiError ??
+          ''
         }
       />
 
@@ -1700,9 +1791,7 @@ export function UtilitiesSection({
           <tr key={item.id}>
             <td>
               {item.tenant
-                ? tenantName(
-                    item.tenant
-                  )
+                ? tenantName(item.tenant)
                 : `Tenant #${item.tenant_id}`}
             </td>
 
@@ -1728,6 +1817,123 @@ export function UtilitiesSection({
           title="No utility bills found"
           description="No utility bills returned from Laravel."
         />
+      )}
+
+      <FormModal
+        open={formOpen}
+        title="Record Utility Bill"
+        onClose={closeForm}
+      >
+        <form onSubmit={submitForm}>
+          {formError && (
+            <div className="manager-form-error">
+              {formError}
+            </div>
+          )}
+
+          <Field label="Tenant" required>
+            <select
+              value={String(values.tenant_id)}
+              onChange={(event) =>
+                setValues({
+                  ...values,
+                  tenant_id:
+                    event.target.value,
+                })
+              }
+            >
+              <option value="">
+                Choose tenant
+              </option>
+
+              {tenants.map((tenant) => (
+                <option
+                  key={tenant.id}
+                  value={tenant.id}
+                >
+                  {tenantName(tenant)}
+                  {tenant.flat?.flat_number
+                    ? ` — Flat ${tenant.flat.flat_number}`
+                    : ''}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Utility type" required>
+            <input
+              type="text"
+              value={String(values.type)}
+              onChange={(event) =>
+                setValues({
+                  ...values,
+                  type: event.target.value,
+                })
+              }
+              placeholder="Electricity"
+            />
+          </Field>
+
+          <Field label="Amount" required>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={String(values.amount)}
+              onChange={(event) =>
+                setValues({
+                  ...values,
+                  amount:
+                    event.target.value === ''
+                      ? ''
+                      : Number(event.target.value),
+                })
+              }
+              placeholder="0.00"
+            />
+          </Field>
+
+          <Field label="Billing month" required>
+            <input
+              type="month"
+              value={String(values.billing_month)}
+              onChange={(event) =>
+                setValues({
+                  ...values,
+                  billing_month: event.target.value,
+                })
+              }
+            />
+          </Field>
+
+          <Field label="Status" required>
+            <select
+              value={values.status}
+              onChange={(event) =>
+                setValues({
+                  ...values,
+                  status:
+                    event.target.value as UtilityBillFormValues['status'],
+                })
+              }
+            >
+              <option value="unpaid">Unpaid</option>
+              <option value="paid">Paid</option>
+            </select>
+          </Field>
+
+          <FormActions
+            submitting={submitting}
+            onCancel={closeForm}
+            submitLabel="Create Utility Bill"
+          />
+        </form>
+      </FormModal>
+
+      {submitting && (
+        <div className="manager-loading">
+          Saving utility bill...
+        </div>
       )}
     </div>
   );
