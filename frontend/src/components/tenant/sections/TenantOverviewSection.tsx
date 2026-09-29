@@ -53,6 +53,79 @@ function TenantOverviewSection({
           notices={dashboard.notices}
         />
 
+        {/* Utility Bills */}
+        <section className="tenant-panel">
+          <div className="tenant-panel__header tenant-panel__header--split">
+            <div>
+              <span className="tenant-panel__eyebrow">Utilities</span>
+              <h3>Utility Bills</h3>
+            </div>
+
+            <span className="status-badge status-badge--info">
+              {dashboard.utility_bills.length}{" "}
+              {dashboard.utility_bills.length === 1 ? "bill" : "bills"}
+            </span>
+          </div>
+
+          {dashboard.utility_bills.length > 0 ? (
+            <div className="tenant-table-wrap">
+              <table className="tenant-data-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Billing Month</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {dashboard.utility_bills.map((bill) => (
+                    <tr key={bill.id}>
+                      <td>{bill.type}</td>
+
+                      <td>
+                        {new Intl.DateTimeFormat("en-US", {
+                          month: "long",
+                          year: "numeric",
+                        }).format(
+                          new Date(`${bill.billing_month}-01`)
+                        )}
+                      </td>
+
+                      <td>
+                        ৳{Number(bill.amount).toLocaleString()}
+                      </td>
+
+                      <td>
+                        <span
+                          className={`tenant-table-badge ${
+                            bill.status === "paid"
+                              ? "tenant-table-badge--paid"
+                              : "tenant-table-badge--pending"
+                          }`}
+                        >
+                          {bill.status === "paid"
+                            ? "Paid"
+                            : "Unpaid"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="tenant-empty-state">
+              <i
+                className="bi bi-lightning-charge"
+                aria-hidden="true"
+              />
+              <p>No utility bills have been recorded yet.</p>
+            </div>
+          )}
+        </section>
+
         <RecentComplaints
           complaints={dashboard.recent_complaints.map((complaint) => ({
             id: complaint.id,
