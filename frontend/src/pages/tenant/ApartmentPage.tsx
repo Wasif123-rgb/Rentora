@@ -45,65 +45,114 @@ function ApartmentPage({ apartment = null }: ApartmentPageProps) {
           <div className="tenant-property-hero__visual">
             <div className="tenant-property-visual">
               <div className="tenant-property-visual__badge">
+                <i
+                  className="bi bi-house-door"
+                  aria-hidden="true"
+                />
                 {apartment?.propertyName || "No apartment assigned"}
               </div>
 
               <div className="tenant-property-visual__icon-wrap">
-                <i className="bi bi-building" aria-hidden="true" />
+                <i
+                  className="bi bi-building"
+                  aria-hidden="true"
+                />
               </div>
 
               <div className="tenant-property-visual__meta">
-                <span>{apartment?.block || "No block data"}</span>
-                <span>{apartment?.flat || "No flat data"}</span>
+                <div className="tenant-property-visual__meta-card">
+                  <span className="tenant-property-visual__meta-label">
+                    Block
+                  </span>
+
+                  <strong>
+                    {apartment?.block || "Not assigned"}
+                  </strong>
+                </div>
+
+                <div className="tenant-property-visual__meta-card">
+                  <span className="tenant-property-visual__meta-label">
+                    Flat / Unit
+                  </span>
+
+                  <strong>
+                    {apartment?.flat || "Not assigned"}
+                  </strong>
+                </div>
               </div>
             </div>
           </div>
 
           <div className="tenant-property-hero__content">
-            <div className="tenant-detail-kicker">Apartment Overview</div>
+            <div className="tenant-detail-kicker">
+              Apartment Overview
+            </div>
 
             <h2 className="tenant-page-title">
               {apartment?.flat || "No apartment assigned"}
             </h2>
 
             <div className="tenant-property-line">
-              <span className="tenant-property-line__label">Property</span>
+              <span className="tenant-property-line__label">
+                Property
+              </span>
+
               <strong>
-                {apartment?.propertyName || "No property information available"}
+                {apartment?.propertyName ||
+                  "No property information available"}
               </strong>
             </div>
 
             <div className="tenant-property-meta-grid">
               <div>
                 <span>Tenant</span>
-                <strong>{apartment?.tenantName || "No data yet"}</strong>
+                <strong>
+                  {apartment?.tenantName || "No data yet"}
+                </strong>
               </div>
 
               <div>
                 <span>Occupancy</span>
-                <strong>{apartment?.occupancy || "No data yet"}</strong>
+                <strong>
+                  {apartment?.occupancy || "No data yet"}
+                </strong>
               </div>
 
               <div>
                 <span>Lease Status</span>
-                <strong>{apartment?.leaseStatus || "No data yet"}</strong>
+                <strong>
+                  {apartment?.leaseStatus || "No data yet"}
+                </strong>
               </div>
 
               <div>
                 <span>Monthly Rent</span>
-                <strong>{apartment?.monthlyRent || "No data yet"}</strong>
+                <strong>
+                  {apartment?.monthlyRent || "No data yet"}
+                </strong>
               </div>
             </div>
 
             <div className="tenant-property-status-row">
               <span className="status-badge">
-                <i className="bi bi-building" aria-hidden="true" />
-                {hasApartment ? apartment?.occupancy || "No status" : "No apartment assigned"}
+                <i
+                  className="bi bi-building"
+                  aria-hidden="true"
+                />
+
+                {hasApartment
+                  ? apartment?.occupancy || "No status"
+                  : "No apartment assigned"}
               </span>
 
               <span className="status-badge status-badge--info">
-                <i className="bi bi-calendar3" aria-hidden="true" />
-                {apartment?.leaseStatus || "No lease information"}
+                <i
+                  className="bi bi-calendar3"
+                  aria-hidden="true"
+                />
+
+                {apartment?.leaseStatus ||
+                  "No lease information"}
               </span>
             </div>
           </div>
@@ -113,7 +162,9 @@ function ApartmentPage({ apartment = null }: ApartmentPageProps) {
           <section className="tenant-panel">
             <div className="tenant-panel__header">
               <div>
-                <span className="tenant-panel__eyebrow">Home Details</span>
+                <span className="tenant-panel__eyebrow">
+                  Home Details
+                </span>
                 <h3>Apartment Details</h3>
               </div>
             </div>
@@ -121,7 +172,10 @@ function ApartmentPage({ apartment = null }: ApartmentPageProps) {
             <div className="tenant-info-grid">
               {apartmentDetails.length > 0 ? (
                 apartmentDetails.map((item) => (
-                  <div key={item.label} className="tenant-info-card">
+                  <div
+                    key={item.label}
+                    className="tenant-info-card"
+                  >
                     <small>{item.label}</small>
                     <strong>{item.value}</strong>
                   </div>
@@ -129,7 +183,9 @@ function ApartmentPage({ apartment = null }: ApartmentPageProps) {
               ) : (
                 <div className="tenant-info-card">
                   <small>Apartment Details</small>
-                  <strong>No apartment details available</strong>
+                  <strong>
+                    No apartment details available
+                  </strong>
                 </div>
               )}
             </div>
@@ -138,7 +194,9 @@ function ApartmentPage({ apartment = null }: ApartmentPageProps) {
           <aside className="tenant-panel">
             <div className="tenant-panel__header">
               <div>
-                <span className="tenant-panel__eyebrow">Management</span>
+                <span className="tenant-panel__eyebrow">
+                  Management
+                </span>
                 <h3>Property Contact</h3>
               </div>
             </div>
@@ -146,14 +204,22 @@ function ApartmentPage({ apartment = null }: ApartmentPageProps) {
             <div className="tenant-contact-card">
               <div className="tenant-contact-card__header">
                 <div className="tenant-avatar tenant-avatar--lg">
-                  <i className="bi bi-building" aria-hidden="true" />
+                  <i
+                    className="bi bi-building"
+                    aria-hidden="true"
+                  />
                 </div>
 
                 <div>
                   <strong>
-                    {management?.name || "No management contact available"}
+                    {management?.name ||
+                      "No management contact available"}
                   </strong>
-                  <span>{management?.office || "No office information"}</span>
+
+                  <span>
+                    {management?.office ||
+                      "No office information"}
+                  </span>
                 </div>
               </div>
 
@@ -161,21 +227,30 @@ function ApartmentPage({ apartment = null }: ApartmentPageProps) {
                 <ul className="tenant-contact-list">
                   {management.phone && (
                     <li>
-                      <i className="bi bi-telephone" aria-hidden="true" />
+                      <i
+                        className="bi bi-telephone"
+                        aria-hidden="true"
+                      />
                       {management.phone}
                     </li>
                   )}
 
                   {management.email && (
                     <li>
-                      <i className="bi bi-envelope" aria-hidden="true" />
+                      <i
+                        className="bi bi-envelope"
+                        aria-hidden="true"
+                      />
                       {management.email}
                     </li>
                   )}
 
                   {management.address && (
                     <li>
-                      <i className="bi bi-geo-alt" aria-hidden="true" />
+                      <i
+                        className="bi bi-geo-alt"
+                        aria-hidden="true"
+                      />
                       {management.address}
                     </li>
                   )}
@@ -209,7 +284,9 @@ function ApartmentPage({ apartment = null }: ApartmentPageProps) {
           <section className="tenant-panel">
             <div className="tenant-panel__header">
               <div>
-                <span className="tenant-panel__eyebrow">Lease</span>
+                <span className="tenant-panel__eyebrow">
+                  Lease
+                </span>
                 <h3>Lease Information</h3>
               </div>
             </div>
@@ -217,7 +294,10 @@ function ApartmentPage({ apartment = null }: ApartmentPageProps) {
             <div className="tenant-info-grid tenant-info-grid--compact">
               {leaseDetails.length > 0 ? (
                 leaseDetails.map((item) => (
-                  <div key={item.label} className="tenant-info-card">
+                  <div
+                    key={item.label}
+                    className="tenant-info-card"
+                  >
                     <small>{item.label}</small>
                     <strong>{item.value}</strong>
                   </div>
@@ -225,7 +305,9 @@ function ApartmentPage({ apartment = null }: ApartmentPageProps) {
               ) : (
                 <div className="tenant-info-card">
                   <small>Lease Information</small>
-                  <strong>No lease information available</strong>
+                  <strong>
+                    No lease information available
+                  </strong>
                 </div>
               )}
             </div>
@@ -234,7 +316,9 @@ function ApartmentPage({ apartment = null }: ApartmentPageProps) {
           <section className="tenant-panel">
             <div className="tenant-panel__header">
               <div>
-                <span className="tenant-panel__eyebrow">Amenities</span>
+                <span className="tenant-panel__eyebrow">
+                  Amenities
+                </span>
                 <h3>Property Amenities</h3>
               </div>
             </div>
@@ -242,7 +326,10 @@ function ApartmentPage({ apartment = null }: ApartmentPageProps) {
             <div className="tenant-amenity-list">
               {amenities.length > 0 ? (
                 amenities.map((amenity) => (
-                  <span key={amenity} className="tenant-amenity-chip">
+                  <span
+                    key={amenity}
+                    className="tenant-amenity-chip"
+                  >
                     <i
                       className="bi bi-check-circle-fill"
                       aria-hidden="true"

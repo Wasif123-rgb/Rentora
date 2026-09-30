@@ -87,7 +87,10 @@ function TenantSidebar({ onNavigate, isOpen }: Props) {
             onClick={() => onNavigate && onNavigate()}
             aria-label="Collapse sidebar"
           >
-            <i className="bi bi-chevron-left" aria-hidden="true" />
+            <i
+              className="bi bi-chevron-left"
+              aria-hidden="true"
+            />
           </button>
         </div>
       </div>
@@ -97,7 +100,9 @@ function TenantSidebar({ onNavigate, isOpen }: Props) {
         role="navigation"
         aria-label="Tenant menu"
       >
-        <div className="tenant-sidebar__label">Tenant Menu</div>
+        <div className="tenant-sidebar__label">
+          Tenant Menu
+        </div>
 
         <nav className="tenant-nav">
           {navItems.map((item) =>
@@ -105,16 +110,24 @@ function TenantSidebar({ onNavigate, isOpen }: Props) {
               <NavLink
                 key={item.label}
                 to={item.path}
+                end
                 className={({ isActive }) =>
-                  `tenant-nav__item ${isActive ? "active" : ""}`
+                  `tenant-nav__item ${
+                    isActive ? "active" : ""
+                  }`
                 }
-                onClick={() => onNavigate && onNavigate()}
+                onClick={() =>
+                  onNavigate && onNavigate()
+                }
               >
                 <i
                   className={`bi ${item.icon} tenant-nav__icon`}
                   aria-hidden="true"
                 />
-                <span className="tenant-nav__text">{item.label}</span>
+
+                <span className="tenant-nav__text">
+                  {item.label}
+                </span>
               </NavLink>
             ) : (
               <button
@@ -128,7 +141,10 @@ function TenantSidebar({ onNavigate, isOpen }: Props) {
                   className={`bi ${item.icon} tenant-nav__icon`}
                   aria-hidden="true"
                 />
-                <span className="tenant-nav__text">{item.label}</span>
+
+                <span className="tenant-nav__text">
+                  {item.label}
+                </span>
               </button>
             )
           )}
@@ -137,11 +153,19 @@ function TenantSidebar({ onNavigate, isOpen }: Props) {
 
       <div className="tenant-sidebar__bottom">
         <div className="status-card">
-          <div className="status-dot" aria-hidden="true"></div>
+          <div
+            className="status-dot"
+            aria-hidden="true"
+          ></div>
 
           <div>
-            <div className="status-title">Account Active</div>
-            <div className="status-sub">Tenant since Aug 2025</div>
+            <div className="status-title">
+              Account Active
+            </div>
+
+            <div className="status-sub">
+              Tenant since Aug 2025
+            </div>
           </div>
         </div>
 
