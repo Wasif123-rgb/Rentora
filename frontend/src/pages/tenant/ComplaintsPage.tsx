@@ -20,12 +20,19 @@ type ComplaintFilter =
 
 type ApiComplaint = {
   id: number;
-  tenant_id: number;
+  tenant_id?: number | null;
+  submitted_by: number;
   title: string;
+  apartment_unit?: string | null;
+  category: string;
+  priority: ComplaintPriority;
   description: string;
+  preferred_contact_method: string;
   status: "open" | "in_progress" | "resolved";
   created_at: string;
   updated_at?: string | null;
+  manager_feedback?: string | null;
+  responded_at?: string | null;
 };
 
 type ComplaintsResponse = {
@@ -41,6 +48,7 @@ type ComplaintsResponse = {
 type ComplaintRecord = {
   id: string;
   title: string;
+  apartmentUnit: string;
   category: string;
   submittedDate: string;
   priority: ComplaintPriority;
@@ -121,22 +129,15 @@ function ComplaintsPage() {
             id: String(complaint.id),
 
             title: complaint.title,
+            apartmentUnit: complaint.apartment_unit || "Not provided",
 
-            /*
-             * Your current complaints table does not contain
-             * category yet.
-             */
-            category: "Maintenance",
+            category: complaint.category,
 
             submittedDate: formatDate(
               complaint.created_at
             ),
 
-            /*
-             * Your current complaints table does not contain
-             * priority yet.
-             */
-            priority: "Normal",
+            priority: complaint.priority,
 
             status: formatStatus(
               complaint.status
@@ -156,6 +157,12 @@ function ComplaintsPage() {
               `Complaint submitted on ${formatDate(
                 complaint.created_at
               )}`,
+              ...(complaint.apartment_unit
+                ? [`Apartment / Unit: ${complaint.apartment_unit}`]
+                : []),
+              ...(complaint.manager_feedback
+                ? [`Management response (${formatDate(complaint.responded_at)}): ${complaint.manager_feedback}`]
+                : []),
             ],
           }));
 
@@ -594,6 +601,14 @@ function ComplaintsPage() {
 
                     <strong>
                       {selectedComplaint.category}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Apartment / Unit</span>
+
+                    <strong>
+                      {selectedComplaint.apartmentUnit}
                     </strong>
                   </div>
 

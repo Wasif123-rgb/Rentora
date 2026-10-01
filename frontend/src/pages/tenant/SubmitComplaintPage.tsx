@@ -23,7 +23,8 @@ interface ComplaintResponse {
   message: string;
   complaint?: {
     id: number;
-    tenant_id: number;
+    tenant_id: number | null;
+    submitted_by: number;
     title: string;
     description: string;
     status: string;
@@ -98,7 +99,11 @@ function SubmitComplaintPage({
           method: "POST",
           body: JSON.stringify({
             title: form.subject.trim(),
+            apartment_unit: form.unit.trim(),
+            category: form.category,
+            priority: form.priority,
             description: form.description.trim(),
+            preferred_contact_method: form.contactMethod,
           }),
         }
       );

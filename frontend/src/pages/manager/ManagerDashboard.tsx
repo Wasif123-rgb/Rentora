@@ -6,7 +6,6 @@ import OverviewSection from '../../components/manager/sections/OverviewSection';
 
 import {
   ComplaintsSection,
-  ReportsSection,
   TenantsSection,
   UtilitiesSection,
 } from '../../components/manager/sections/ManagementSections';
@@ -46,11 +45,15 @@ import {
 
   getManagerTenants,
   getManagerUtilityBills,
+  getManagerComplaints,
+  updateManagerComplaint,
 } from '../../services/managerApi';
 
 import type {
   Apartment,
   ApartmentFormValues,
+  Complaint,
+  ComplaintResponseValues,
   Flat,
   FlatFormValues,
   Notice,
@@ -92,6 +95,7 @@ function ManagerDashboard() {
 
   const [tenants, setTenants] = useState<any[]>([]);
   const [utilityBills, setUtilityBills] = useState<any[]>([]);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
 
   /*
   |--------------------------------------------------------------------------
@@ -182,6 +186,7 @@ function ManagerDashboard() {
         noticesResponse,
         tenantsResponse,
         utilityBillsResponse,
+        complaintsResponse,
       ] = await Promise.all([
         getManagerApartments(),
         getManagerFlats(),
@@ -191,6 +196,7 @@ function ManagerDashboard() {
         // REAL Laravel endpoints
         getManagerTenants(),
         getManagerUtilityBills(),
+        getManagerComplaints(),
       ]);
 
       /*
@@ -223,6 +229,8 @@ function ManagerDashboard() {
         utilityBillsResponse.data ?? []
       );
 
+      setComplaints(complaintsResponse.data ?? []);
+
     } catch (error) {
       console.error(
         'Failed to load manager records:',
@@ -236,6 +244,28 @@ function ManagerDashboard() {
       setLoading(false);
     }
   }, [user]);
+
+  const handleUpdateComplaint = async (
+    id: RecordId,
+    values: ComplaintResponseValues
+  ) => {
+    try {
+      setSubmitting(true);
+      clearMessages();
+
+      const response = await updateManagerComplaint(id, values);
+
+      setComplaints((current) => current.map((complaint) =>
+        String(complaint.id) === String(id) ? response.data : complaint
+      ));
+      setSuccessMessage('Complaint response saved successfully.');
+    } catch (error) {
+      setApiError(getErrorMessage(error));
+      throw error;
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   /*
   |--------------------------------------------------------------------------
@@ -821,8 +851,11 @@ function ManagerDashboard() {
       case 'complaints':
         return (
           <ComplaintsSection
-            complaints={[]}
-            maintenanceRequests={[]}
+            complaints={complaints}
+            onUpdateComplaint={handleUpdateComplaint}
+            submitting={submitting}
+            apiError={apiError}
+            successMessage={successMessage}
           />
         );
 
@@ -837,11 +870,6 @@ function ManagerDashboard() {
             apiError={apiError}
             successMessage={successMessage}
           />
-        );
-
-      case 'reports':
-        return (
-          <ReportsSection />
         );
 
       default:

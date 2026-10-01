@@ -3,6 +3,8 @@ import { apiRequest } from './api';
 import type {
   Apartment,
   ApartmentFormValues,
+  Complaint,
+  ComplaintResponseValues,
   Flat,
   FlatFormValues,
   Notice,
@@ -299,6 +301,30 @@ export async function getManagerUtilityBills() {
   return apiRequest<ListResponse<ManagerUtilityBill>>(
     '/manager/utility-bills'
   );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Complaints
+|--------------------------------------------------------------------------
+*/
+
+export async function getManagerComplaints() {
+  return apiRequest<ListResponse<Complaint>>('/manager/complaints');
+}
+
+export async function updateManagerComplaint(
+  id: RecordId,
+  values: ComplaintResponseValues
+) {
+  return apiRequest<{
+    success: boolean;
+    message?: string;
+    data: Complaint;
+  }>(`/manager/complaints/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(values),
+  });
 }
 
 

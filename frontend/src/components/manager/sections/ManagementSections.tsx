@@ -1,17 +1,13 @@
 import { useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 
-import { reports } from '../../../data/managerManagementData';
-
 import type {
   Apartment,
   ApartmentFormValues,
   Complaint,
-  ComplaintFormValues,
+  ComplaintResponseValues,
   Flat,
   FlatFormValues,
-  MaintenanceRequest,
-  MaintenanceRequestFormValues,
   Notice,
   NoticeFormValues,
   RecordId,
@@ -70,6 +66,10 @@ const displayValue = (
 
 const tenantName = (tenant: Tenant): string =>
   tenant.user?.name ?? `Tenant #${tenant.id}`;
+
+const complaintSubmitterName = (complaint: Complaint): string =>
+  complaint.submitter?.name ??
+  (complaint.tenant ? tenantName(complaint.tenant) : 'Unknown tenant');
 
 const tenantEmail = (tenant: Tenant): string =>
   tenant.user?.email ?? '';
@@ -1940,46 +1940,78 @@ export function UtilitiesSection({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Complaints & Maintenance                                                   */
+/* Complaints                                                                 */
 /* -------------------------------------------------------------------------- */
 
 type ComplaintsSectionProps = {
   complaints: Complaint[];
-  maintenanceRequests: MaintenanceRequest[];
 
-  onCreateComplaint?: (
-    values: ComplaintFormValues
+  onUpdateComplaint: (
+    id: RecordId,
+    values: ComplaintResponseValues
   ) => void | Promise<void>;
-
-  onCreateMaintenance?: (
-    values: MaintenanceRequestFormValues
-  ) => void | Promise<void>;
+  submitting?: boolean;
+  apiError?: string | null;
+  successMessage?: string | null;
 };
 
 export function ComplaintsSection({
   complaints,
-  maintenanceRequests,
-  onCreateComplaint,
-  onCreateMaintenance,
+  onUpdateComplaint,
+  submitting = false,
+  apiError,
+  successMessage,
 }: ComplaintsSectionProps) {
-  const [tab, setTab] =
-    useState<
-      'complaints' | 'maintenance'
-    >('complaints');
-
   const [search, setSearch] =
     useState('');
+
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [responseValues, setResponseValues] = useState<ComplaintResponseValues>({
+    status: 'open',
+    manager_feedback: '',
+  });
+  const [responseError, setResponseError] = useState('');
+
+  const openResponse = (complaint: Complaint) => {
+    setSelectedComplaint(complaint);
+    setResponseValues({
+      status: complaint.status,
+      manager_feedback: complaint.manager_feedback ?? '',
+    });
+    setResponseError('');
+  };
+
+  const closeResponse = () => {
+    if (!submitting) {
+      setSelectedComplaint(null);
+      setResponseError('');
+    }
+  };
+
+  const submitResponse = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!selectedComplaint || !responseValues.manager_feedback.trim()) {
+      setResponseError('Manager feedback is required.');
+      return;
+    }
+
+    try {
+      await onUpdateComplaint(selectedComplaint.id, {
+        ...responseValues,
+        manager_feedback: responseValues.manager_feedback.trim(),
+      });
+      setSelectedComplaint(null);
+    } catch {
+      setResponseError('Unable to save the response.');
+    }
+  };
 
   const complaintRecords =
     useMemo(() => {
       return complaints.filter(
         (item) => {
-          const tenant =
-            item.tenant
-              ? tenantName(
-                  item.tenant
-                )
-              : '';
+          const tenant = complaintSubmitterName(item);
 
           return matches(
             [
@@ -1994,66 +2026,15 @@ export function ComplaintsSection({
       );
     }, [complaints, search]);
 
-  const maintenanceRecords =
-    useMemo(() => {
-      return maintenanceRequests.filter(
-        (item) => {
-          const complaintTitle =
-            item.complaint?.title ??
-            '';
-
-          const assigned =
-            item.assigned_user?.name ??
-            '';
-
-          return matches(
-            [
-              complaintTitle,
-              item.remarks ?? '',
-              item.status,
-              assigned,
-            ],
-            search
-          );
-        }
-      );
-    }, [
-      maintenanceRequests,
-      search,
-    ]);
-
   return (
     <div className="manager-section">
       <ManagerSectionHeader
         eyebrow="Service desk"
-        title="Complaints & Maintenance"
-        description="Manage resident complaints and maintenance work."
-        actionLabel={
-          tab === 'complaints'
-            ? 'Create Complaint'
-            : 'Create Maintenance'
-        }
-        actionIcon="bi-plus-lg"
-        onAction={() => {
-          if (
-            tab === 'complaints'
-          ) {
-            onCreateComplaint?.({
-              tenant_id: '',
-              title: '',
-              description: '',
-              status: 'open',
-            });
-          } else {
-            onCreateMaintenance?.({
-              complaint_id: '',
-              assigned_to: '',
-              remarks: '',
-              status: 'pending',
-            });
-          }
-        }}
+        title="Complaints"
+        description="Manage resident complaints and responses."
       />
+
+      <Feedback message={successMessage ?? apiError ?? ''} />
 
       <ModuleToolbar
         search={search}
@@ -2061,56 +2042,14 @@ export function ComplaintsSection({
         searchLabel="Search service records"
       />
 
-      <div
-        className="manager-segments"
-        role="tablist"
-        aria-label="Service desk view"
-      >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={
-            tab === 'complaints'
-          }
-          className={
-            tab === 'complaints'
-              ? 'active'
-              : ''
-          }
-          onClick={() =>
-            setTab('complaints')
-          }
-        >
-          Complaints
-        </button>
-
-        <button
-          type="button"
-          role="tab"
-          aria-selected={
-            tab === 'maintenance'
-          }
-          className={
-            tab === 'maintenance'
-              ? 'active'
-              : ''
-          }
-          onClick={() =>
-            setTab('maintenance')
-          }
-        >
-          Maintenance Requests
-        </button>
-      </div>
-
-      {tab === 'complaints' ? (
-        <>
-          <DataTable
+      <DataTable
             headers={[
               'Complaint',
               'Tenant',
+              'Apartment / Unit',
               'Description',
               'Status',
+              'Action',
               'Created',
             ]}
           >
@@ -2122,11 +2061,11 @@ export function ComplaintsSection({
                   </td>
 
                   <td>
-                    {item.tenant
-                      ? tenantName(
-                          item.tenant
-                        )
-                      : `Tenant #${item.tenant_id}`}
+                    {complaintSubmitterName(item)}
+                  </td>
+
+                  <td>
+                    {item.apartment_unit ?? '—'}
                   </td>
 
                   <td>
@@ -2142,58 +2081,13 @@ export function ComplaintsSection({
                   </td>
 
                   <td>
-                    {item.created_at ??
-                      '—'}
-                  </td>
-                </tr>
-              )
-            )}
-          </DataTable>
-
-          {!complaintRecords.length && (
-            <EmptyState
-              title="No complaints found"
-              description="No complaints returned from Laravel."
-            />
-          )}
-        </>
-      ) : (
-        <>
-          <DataTable
-            headers={[
-              'Complaint',
-              'Assigned to',
-              'Remarks',
-              'Status',
-              'Created',
-            ]}
-          >
-            {maintenanceRecords.map(
-              (item) => (
-                <tr key={item.id}>
-                  <td className="manager-table__primary">
-                    {item.complaint
-                      ?.title ??
-                      `Complaint #${item.complaint_id}`}
-                  </td>
-
-                  <td>
-                    {item.assigned_user
-                      ?.name ??
-                      'Unassigned'}
-                  </td>
-
-                  <td>
-                    {item.remarks ??
-                      '—'}
-                  </td>
-
-                  <td>
-                    <StatusBadge
-                      value={
-                        item.status
-                      }
-                    />
+                    <button
+                      type="button"
+                      className="manager-secondary-button"
+                      onClick={() => openResponse(item)}
+                    >
+                      View / Respond
+                    </button>
                   </td>
 
                   <td>
@@ -2203,16 +2097,77 @@ export function ComplaintsSection({
                 </tr>
               )
             )}
-          </DataTable>
+      </DataTable>
 
-          {!maintenanceRecords.length && (
-            <EmptyState
-              title="No maintenance requests found"
-              description="No maintenance requests returned from Laravel."
-            />
-          )}
-        </>
+      {!complaintRecords.length && (
+        <EmptyState
+          title="No complaints found"
+          description="No complaints returned from Laravel."
+        />
       )}
+
+      <FormModal
+        open={selectedComplaint !== null}
+        title="Complaint response"
+        onClose={closeResponse}
+      >
+        {selectedComplaint && (
+          <form onSubmit={submitResponse}>
+            {responseError && (
+              <div className="manager-form-error">{responseError}</div>
+            )}
+
+            <div className="manager-form-grid">
+              <Field label="Complaint">
+                <input value={selectedComplaint.title} readOnly />
+              </Field>
+
+              <Field label="Tenant">
+                <input
+                  value={complaintSubmitterName(selectedComplaint)}
+                  readOnly
+                />
+              </Field>
+
+              <Field label="Apartment / Unit">
+                <input value={selectedComplaint.apartment_unit ?? ''} readOnly />
+              </Field>
+
+              <Field label="Status" required>
+                <select
+                  value={responseValues.status}
+                  onChange={(event) => setResponseValues({
+                    ...responseValues,
+                    status: event.target.value as Complaint['status'],
+                  })}
+                >
+                  <option value="open">Open</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="resolved">Resolved</option>
+                </select>
+              </Field>
+
+              <Field label="Manager feedback" required>
+                <textarea
+                  rows={6}
+                  value={responseValues.manager_feedback}
+                  onChange={(event) => setResponseValues({
+                    ...responseValues,
+                    manager_feedback: event.target.value,
+                  })}
+                  placeholder="Write a response for the tenant..."
+                />
+              </Field>
+            </div>
+
+            <FormActions
+              submitting={submitting}
+              onCancel={closeResponse}
+              submitLabel="Save Response"
+            />
+          </form>
+        )}
+      </FormModal>
     </div>
   );
 }
@@ -2529,82 +2484,6 @@ export function NoticesSection({
         <div className="manager-loading">
           Saving notice...
         </div>
-      )}
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Reports                                                                    */
-/* -------------------------------------------------------------------------- */
-
-export function ReportsSection() {
-  const [feedback, setFeedback] =
-    useState('');
-
-  return (
-    <div className="manager-section">
-      <ManagerSectionHeader
-        eyebrow="Insights"
-        title="Reports"
-        description="Generate operational summaries for your portfolio."
-      />
-
-      <Feedback message={feedback} />
-
-      {reports.length ? (
-        <div className="manager-report-grid">
-          {reports.map((item) => (
-            <article
-              className="manager-report-card"
-              key={item.id}
-            >
-              <span className="manager-report-card__icon">
-                <i
-                  className={`bi ${item.icon}`}
-                />
-              </span>
-
-              <h2>{item.title}</h2>
-
-              <p>
-                {item.description}
-              </p>
-
-              <label>
-                <span>Date range</span>
-
-                <select
-                  defaultValue={
-                    item.range ?? ''
-                  }
-                  aria-label={`${item.title} date range`}
-                >
-                  <option value="">
-                    Not available
-                  </option>
-                </select>
-              </label>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setFeedback(
-                    `${item.title} is ready for backend integration.`
-                  )
-                }
-              >
-                Generate report{' '}
-                <i className="bi bi-arrow-up-right" />
-              </button>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          title="No reports available"
-          description="Reports can be generated after verified portfolio data is connected."
-        />
       )}
     </div>
   );

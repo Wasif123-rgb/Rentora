@@ -4,7 +4,6 @@ import StatCard from '../../dashboard/StatCard';
 import type {
   DashboardStat,
   ManagerOccupancySummary,
-  FeaturedProperty,
 } from '../../../data/managerDashboardData';
 import type { ManagerSection } from '../../../data/managerManagementData';
 import { apiRequest } from '../../../services/api';
@@ -28,12 +27,6 @@ interface DashboardResponse {
     overdue_payments: number;
     open_complaints: number;
     active_maintenance_requests: number;
-    featured_property: {
-      id: number;
-      name: string;
-      address: string;
-      flat_count: number;
-    } | null;
     items_requiring_attention: {
       type: string;
       message: string;
@@ -63,14 +56,6 @@ function OverviewSection({
   const [dashboard, setDashboard] = useState<DashboardResponse['data'] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12
-      ? 'Good morning'
-      : hour < 18
-        ? 'Good afternoon'
-        : 'Good evening';
 
   useEffect(() => {
     loadDashboard();
@@ -171,48 +156,14 @@ function OverviewSection({
       }
     : null;
 
-  const featuredProperty: FeaturedProperty | null =
-    dashboard?.featured_property
-      ? {
-          id: dashboard.featured_property.id,
-          name: dashboard.featured_property.name,
-          imageUrl: null,
-          occupancyLabel: `${dashboard.featured_property.flat_count} flat(s)`,
-          occupancyPercentage: null,
-        }
-      : null;
-
   const attentionItems = dashboard?.items_requiring_attention ?? [];
 
   return (
     <div className="manager-section manager-section--overview">
       <section className="manager-welcome">
         <div className="manager-welcome__content">
-          <div className="manager-welcome__meta">
-            <span className="manager-welcome__eyebrow">
-              <i aria-hidden="true" /> Portfolio overview
-            </span>
-
-            <div
-              className="manager-welcome__month"
-              aria-label="Current reporting period"
-            >
-              <i className="bi bi-calendar3" aria-hidden="true" />
-
-              <span>
-                <small>Reporting period</small>
-                <strong>
-                  {new Date().toLocaleDateString('en-US', {
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </strong>
-              </span>
-            </div>
-          </div>
-
           <h1>
-            {greeting}, <span>{firstName}.</span>
+            Welcome, <span>{firstName}.</span>
           </h1>
 
           <p>
@@ -232,44 +183,25 @@ function OverviewSection({
               <i className="bi bi-arrow-right" aria-hidden="true" />
             </button>
 
+          </div>
+
+          <div
+            className="manager-welcome__month"
+            aria-label="Current reporting period"
+          >
+            <i className="bi bi-calendar3" aria-hidden="true" />
+
             <span>
-              <i className="bi bi-check-circle" aria-hidden="true" />
-              Live portfolio data
+              <small>Reporting period</small>
+              <strong>
+                {new Date().toLocaleDateString('en-US', {
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </strong>
             </span>
           </div>
         </div>
-
-        <figure className="manager-welcome__visual manager-welcome__empty-feature">
-          {featuredProperty ? (
-            <figcaption>
-              <span>
-                <i className="bi bi-building" aria-hidden="true" />
-                Featured property
-              </span>
-
-              <div>
-                <strong>{featuredProperty.name}</strong>
-                <small>
-                  {featuredProperty.occupancyLabel}
-                </small>
-              </div>
-            </figcaption>
-          ) : (
-            <figcaption>
-              <span>
-                <i className="bi bi-stars" aria-hidden="true" />
-                Featured property
-              </span>
-
-              <div>
-                <strong>No property yet</strong>
-                <small>
-                  Create an apartment to see it here.
-                </small>
-              </div>
-            </figcaption>
-          )}
-        </figure>
       </section>
 
       <section aria-labelledby="dashboard-summary-title">
