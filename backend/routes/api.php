@@ -341,7 +341,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource(
             'manager/complaints',
             ManagerComplaintController::class
-        )->parameters([
+        )->only(['index', 'show', 'update'])
+        ->parameters([
             'complaints' => 'complaint',
         ]);
 

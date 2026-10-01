@@ -15,20 +15,11 @@ export interface ManagerOccupancySummary {
   vacant: number | null;
 }
 
-export interface FeaturedProperty {
-  id: number;
-  name: string;
-  imageUrl: string | null;
-  occupancyLabel: string | null;
-  occupancyPercentage: number | null;
-}
-
 export interface ManagerDashboardData {
   reportingPeriod: string | null;
   stats: readonly DashboardStat[];
   attentionItems: readonly unknown[];
   occupancy: ManagerOccupancySummary | null;
-  featuredProperty: FeaturedProperty | null;
 }
 
 const unavailableDescription = 'No verified data available yet';
@@ -47,5 +38,4 @@ export const managerDashboardData: ManagerDashboardData = {
   ],
   attentionItems: [],
   occupancy: null,
-  featuredProperty: null,
 };

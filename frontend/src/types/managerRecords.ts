@@ -185,13 +185,22 @@ export type ComplaintStatus =
 export interface Complaint {
   id: RecordId;
 
-  tenant_id: RecordId;
+  tenant_id?: RecordId | null;
+  submitted_by: RecordId;
 
   title: string;
+  apartment_unit?: string | null;
+  category: string;
+  priority: 'Low' | 'Normal' | 'High' | 'Urgent';
   description: string;
+  preferred_contact_method: 'Email' | 'Phone' | 'WhatsApp';
   status: ComplaintStatus;
+  manager_feedback?: string | null;
+  responded_by?: RecordId | null;
+  responded_at?: string | null;
 
   tenant?: Tenant | null;
+  submitter?: TenantUser | null;
 
   created_at?: string | null;
   updated_at?: string | null;
@@ -200,8 +209,16 @@ export interface Complaint {
 export type ComplaintFormValues = {
   tenant_id: RecordId | '';
   title: string;
+  category: string;
+  priority: 'Low' | 'Normal' | 'High' | 'Urgent';
   description: string;
+  preferred_contact_method: 'Email' | 'Phone' | 'WhatsApp';
   status: ComplaintStatus;
+};
+
+export type ComplaintResponseValues = {
+  status: ComplaintStatus;
+  manager_feedback: string;
 };
 
 

@@ -214,16 +214,12 @@ class TenantDashboardController extends Controller
      */
     public function complaints(Request $request)
     {
-        $tenant = $this->tenantForUser($request);
+        $userId = $request->user()->id;
 
-        if (!$tenant) {
-            return response()->json([
-                'success' => true,
-                'complaints' => [],
-            ]);
-        }
-
-        $complaints = Complaint::where('tenant_id', $tenant->id)
+        $complaints = Complaint::where('submitted_by', $userId)
+            ->orWhereHas('tenant', function ($query) use ($userId) {
+                $query->where('user_id', $userId);
+            })
             ->latest()
             ->paginate(10);
 
@@ -240,7 +236,11 @@ class TenantDashboardController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
+            'apartment_unit' => 'required|string|max:255',
+            'category' => 'required|string|in:Plumbing,Electrical,Maintenance,Security,Cleaning,Noise,Other',
+            'priority' => 'required|string|in:Low,Normal,High,Urgent',
             'description' => 'required|string|max:5000',
+            'preferred_contact_method' => 'required|string|in:Email,Phone,WhatsApp',
         ]);
 
         if ($validator->fails()) {
@@ -253,17 +253,15 @@ class TenantDashboardController extends Controller
 
         $tenant = $this->tenantForUser($request);
 
-        if (!$tenant) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tenant assignment not found.',
-            ], 403);
-        }
-
         $complaint = Complaint::create([
-            'tenant_id' => $tenant->id,
+            'tenant_id' => $tenant?->id,
+            'submitted_by' => $request->user()->id,
             'title' => $validator->validated()['title'],
+            'apartment_unit' => $validator->validated()['apartment_unit'],
+            'category' => $validator->validated()['category'],
+            'priority' => $validator->validated()['priority'],
             'description' => $validator->validated()['description'],
+            'preferred_contact_method' => $validator->validated()['preferred_contact_method'],
             'status' => 'open',
         ]);
 
