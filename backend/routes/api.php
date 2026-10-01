@@ -12,6 +12,7 @@ use App\Http\Controllers\ManagerMaintenanceRequestController;
 use App\Http\Controllers\ManagerNoticeController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\TenantDashboardController;
+use App\Http\Controllers\TenantRentPaymentController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -144,9 +145,9 @@ Route::middleware('auth:sanctum')->group(function () {
         | Remove payment method
         */
 
-        Route::delete('/{paymentMethod}', [
+         Route::delete('/{paymentMethod}', [
             PaymentMethodController::class,
-            'destroy',
+            'deletePaymentMethod',
         ]);
     });
 
@@ -222,6 +223,27 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/maintenance-requests', [
                 TenantDashboardController::class,
                 'maintenanceRequests',
+            ]);
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Tenant Rent Payment
+            |--------------------------------------------------------------------------
+            |
+            | Create a Stripe PaymentIntent for the tenant's
+            | current outstanding rent and finalize the payment.
+            |
+            */
+
+            Route::post('/rent-payment/create', [
+                TenantRentPaymentController::class,
+                'create',
+            ]);
+
+            Route::post('/rent-payment/finalize', [
+                TenantRentPaymentController::class,
+                'finalize',
             ]);
         });
 
