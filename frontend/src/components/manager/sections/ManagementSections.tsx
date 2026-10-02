@@ -19,6 +19,10 @@ import type {
   UtilityBillFormValues,
 } from '../../../types/managerRecords';
 
+import type {
+  EligibleTenantUser,
+} from '../../../services/managerApi';
+
 import ManagerSectionHeader from '../ManagerSectionHeader';
 import StatusBadge from '../StatusBadge';
 
@@ -1232,6 +1236,12 @@ export function FlatsSection({
 type TenantsSectionProps = {
   tenants: Tenant[];
 
+  eligibleTenantUsers?: EligibleTenantUser[];
+
+  eligibleTenantsLoading?: boolean;
+
+  onLoadEligibleTenants?: () => void | Promise<void>;
+
   onCreate?: (
     values: TenantFormValues
   ) => void | Promise<void>;
@@ -1250,6 +1260,9 @@ type TenantsSectionProps = {
 
 export function TenantsSection({
   tenants,
+  eligibleTenantUsers = [],
+  eligibleTenantsLoading = false,
+  onLoadEligibleTenants,
   onCreate,
   onUpdate,
   onDelete,
@@ -1261,6 +1274,18 @@ export function TenantsSection({
   const [selected, setSelected] =
     useState<Tenant | null>(null);
 
+  const [formOpen, setFormOpen] =
+    useState(false);
+
+  const [formError, setFormError] =
+    useState('');
+
+  const [selectedUserId, setSelectedUserId] =
+    useState<RecordId | ''>('');
+
+  const [recordsSearch, setRecordsSearch] =
+    useState('');
+
   const records = useMemo(() => {
     return tenants.filter((item) =>
       matches(
@@ -1270,34 +1295,127 @@ export function TenantsSection({
           tenantPhone(item),
           flatNumber(item),
           apartmentName(item),
-          item.lease_start,
-          item.lease_end,
+          item.lease_start ?? '',
+          item.lease_end ?? '',
         ],
-        search
+        recordsSearch
       )
     );
-  }, [tenants, search]);
+  }, [tenants, recordsSearch]);
+
+  const eligibleSearchResults = useMemo(() => {
+    const normalizedSearch =
+      search.trim().toLowerCase();
+
+    if (!normalizedSearch) {
+      return eligibleTenantUsers;
+    }
+
+    return eligibleTenantUsers.filter(
+      (user) =>
+        [
+          user.name,
+          user.email,
+          user.phone ?? '',
+          String(user.id),
+        ].some((value) =>
+          value
+            .toLowerCase()
+            .includes(normalizedSearch)
+        )
+    );
+  }, [
+    eligibleTenantUsers,
+    search,
+  ]);
+
+  const selectedEligibleUser =
+    eligibleTenantUsers.find(
+      (user) =>
+        String(user.id) ===
+        String(selectedUserId)
+    );
+
+  const openCreate = async () => {
+    setSelectedUserId('');
+    setSearch('');
+    setFormError('');
+    setFormOpen(true);
+
+    if (onLoadEligibleTenants) {
+      try {
+        await onLoadEligibleTenants();
+      } catch {
+        setFormError(
+          'Unable to load registered tenant users.'
+        );
+      }
+    }
+  };
+
+  const closeForm = () => {
+    if (submitting) {
+      return;
+    }
+
+    setFormOpen(false);
+    setSelectedUserId('');
+    setSearch('');
+    setFormError('');
+  };
+
+  const submitTenant = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    if (!selectedUserId) {
+      setFormError(
+        'Choose a registered tenant user.'
+      );
+      return;
+    }
+
+    if (!onCreate) {
+      setFormError(
+        'Tenant onboarding is not available.'
+      );
+      return;
+    }
+
+    setFormError('');
+
+    try {
+      await onCreate({
+        user_id: selectedUserId,
+        flat_id: '',
+        move_in_date: '',
+        lease_start: '',
+        lease_end: '',
+      });
+
+      closeForm();
+    } catch {
+      setFormError(
+        'Unable to onboard this tenant.'
+      );
+    }
+  };
 
   return (
     <div className="manager-section">
       <ManagerSectionHeader
         eyebrow="Residents"
         title="Tenant Management"
-        description="Manage residents, flats, and lease information."
+        description="Manage registered residents and their property assignments."
         actionLabel="Add Tenant"
         actionIcon="bi-person-plus"
-        onAction={() => {
-          if (onCreate) {
-            window.alert(
-              'Connect the Tenant form to onCreate.'
-            );
-          }
-        }}
+        onAction={openCreate}
       />
 
       <ModuleToolbar
-        search={search}
-        onSearch={setSearch}
+        search={recordsSearch}
+        onSearch={setRecordsSearch}
         searchLabel="Search tenants"
       />
 
@@ -1312,70 +1430,102 @@ export function TenantsSection({
           '',
         ]}
       >
-        {records.map((item) => (
-          <tr key={item.id}>
-            <td>
-              <div className="manager-person">
-                <span>
-                  {tenantName(item)
-                    .split(' ')
-                    .map(
-                      (part) =>
-                        part[0]
-                    )
-                    .join('')
-                    .toUpperCase()}
-                </span>
+        {records.map((item) => {
+          const hasResidence =
+            Boolean(item.flat);
 
-                <strong>
-                  {tenantName(item)}
-                </strong>
-              </div>
-            </td>
+          return (
+            <tr key={item.id}>
+              <td>
+                <div className="manager-person">
+                  <span>
+                    {tenantName(item)
+                      .split(' ')
+                      .map(
+                        (part) =>
+                          part[0]
+                      )
+                      .join('')
+                      .toUpperCase()}
+                  </span>
 
-            <td>
-              <strong>
-                {flatNumber(item)}
-              </strong>
+                  <strong>
+                    {tenantName(item)}
+                  </strong>
+                </div>
+              </td>
 
-              <small>
-                {apartmentName(item)}
-              </small>
-            </td>
+              <td>
+                {hasResidence ? (
+                  <>
+                    <strong>
+                      {flatNumber(item)}
+                    </strong>
 
-            <td>
-              {tenantPhone(item) ||
-                tenantEmail(item) ||
-                '—'}
-            </td>
+                    <small>
+                      {apartmentName(item)}
+                    </small>
+                  </>
+                ) : (
+                  <>
+                    <strong>
+                      Not selected
+                    </strong>
 
-            <td>
-              {item.move_in_date}
-            </td>
+                    <small>
+                      Residence: Not selected yet.
+                    </small>
+                  </>
+                )}
+              </td>
 
-            <td>
-              {item.lease_start}
-              {' → '}
-              {item.lease_end}
-            </td>
+              <td>
+                {tenantPhone(item) ||
+                  tenantEmail(item) ||
+                  '—'}
+              </td>
 
-            <td>
-              <StatusBadge value="active" />
-            </td>
+              <td>
+                {displayValue(
+                  item.move_in_date
+                )}
+              </td>
 
-            <td>
-              <button
-                className="manager-text-button"
-                type="button"
-                onClick={() =>
-                  setSelected(item)
-                }
-              >
-                View details
-              </button>
-            </td>
-          </tr>
-        ))}
+              <td>
+                {item.lease_start ||
+                item.lease_end ? (
+                  <>
+                    {displayValue(
+                      item.lease_start
+                    )}
+                    {' → '}
+                    {displayValue(
+                      item.lease_end
+                    )}
+                  </>
+                ) : (
+                  'Not set'
+                )}
+              </td>
+
+              <td>
+                <StatusBadge value="active" />
+              </td>
+
+              <td>
+                <button
+                  className="manager-text-button"
+                  type="button"
+                  onClick={() =>
+                    setSelected(item)
+                  }
+                >
+                  View details
+                </button>
+              </td>
+            </tr>
+          );
+        })}
       </DataTable>
 
       {!records.length && (
@@ -1394,7 +1544,9 @@ export function TenantsSection({
         }
         subtitle={
           selected
-            ? `${apartmentName(selected)} · ${flatNumber(selected)}`
+            ? selected.flat
+              ? `${apartmentName(selected)} · ${flatNumber(selected)}`
+              : 'Residence: Not selected yet.'
             : ''
         }
         onClose={() =>
@@ -1424,18 +1576,22 @@ export function TenantsSection({
             </div>
 
             <div>
-              <span>Move in</span>
+              <span>Residence</span>
 
               <strong>
-                {selected.move_in_date}
+                {selected.flat
+                  ? `${apartmentName(selected)} · ${flatNumber(selected)}`
+                  : 'Not selected yet.'}
               </strong>
             </div>
 
             <div>
-              <span>Flat</span>
+              <span>Move in</span>
 
               <strong>
-                {flatNumber(selected)}
+                {displayValue(
+                  selected.move_in_date
+                )}
               </strong>
             </div>
 
@@ -1443,7 +1599,9 @@ export function TenantsSection({
               <span>Lease start</span>
 
               <strong>
-                {selected.lease_start}
+                {displayValue(
+                  selected.lease_start
+                )}
               </strong>
             </div>
 
@@ -1451,12 +1609,165 @@ export function TenantsSection({
               <span>Lease end</span>
 
               <strong>
-                {selected.lease_end}
+                {displayValue(
+                  selected.lease_end
+                )}
+              </strong>
+            </div>
+
+            <div>
+              <span>User ID</span>
+
+              <strong>
+                {selected.user_id}
+              </strong>
+            </div>
+
+            <div>
+              <span>Tenant ID</span>
+
+              <strong>
+                {selected.id}
               </strong>
             </div>
           </div>
         )}
       </DetailDrawer>
+
+      <FormModal
+        open={formOpen}
+        title="Add Tenant"
+        onClose={closeForm}
+      >
+        <form onSubmit={submitTenant}>
+          {formError && (
+            <div className="manager-form-error">
+              {formError}
+            </div>
+          )}
+
+          <p className="manager-form-help">
+            Select a person who has already registered
+            as a tenant account. This links their
+            existing user account to a Tenant record.
+          </p>
+
+          <Field
+            label="Search registered users"
+          >
+            <input
+              type="search"
+              value={search}
+              onChange={(event) =>
+                setSearch(
+                  event.target.value
+                )
+              }
+              placeholder="Search by name, email, phone..."
+            />
+          </Field>
+
+          <Field
+            label="Registered tenant"
+            required
+          >
+            {eligibleTenantsLoading ? (
+              <div className="manager-loading">
+                Loading registered tenant users...
+              </div>
+            ) : (
+              <select
+                value={String(
+                  selectedUserId
+                )}
+                onChange={(event) => {
+                  const value =
+                    event.target.value;
+
+                  setSelectedUserId(
+                    value
+                  );
+
+                  setFormError('');
+                }}
+              >
+                <option value="">
+                  Choose registered tenant
+                </option>
+
+                {eligibleSearchResults.map(
+                  (user) => (
+                    <option
+                      key={user.id}
+                      value={user.id}
+                    >
+                      {user.name}
+                      {' — '}
+                      {user.email}
+                    </option>
+                  )
+                )}
+              </select>
+            )}
+          </Field>
+
+          {selectedEligibleUser && (
+            <div className="manager-detail-grid">
+              <div>
+                <span>Name</span>
+
+                <strong>
+                  {selectedEligibleUser.name}
+                </strong>
+              </div>
+
+              <div>
+                <span>Email</span>
+
+                <strong>
+                  {selectedEligibleUser.email}
+                </strong>
+              </div>
+
+              <div>
+                <span>Phone</span>
+
+                <strong>
+                  {selectedEligibleUser.phone ||
+                    '—'}
+                </strong>
+              </div>
+
+              <div>
+                <span>Residence</span>
+
+                <strong>
+                  Not selected yet.
+                </strong>
+              </div>
+            </div>
+          )}
+
+          {!eligibleTenantsLoading &&
+            !eligibleSearchResults.length && (
+              <EmptyState
+                title="No eligible tenant users"
+                description="There are no registered tenant accounts available for onboarding."
+              />
+            )}
+
+          <p className="manager-form-help">
+            Property assignment is optional. The tenant
+            can be assigned to a property later.
+          </p>
+
+          <FormActions
+            submitting={submitting}
+            onCancel={closeForm}
+            submitLabel="Add Tenant"
+          />
+        </form>
+      </FormModal>
 
       {submitting && (
         <div className="manager-loading">
@@ -1950,6 +2261,7 @@ type ComplaintsSectionProps = {
     id: RecordId,
     values: ComplaintResponseValues
   ) => void | Promise<void>;
+
   submitting?: boolean;
   apiError?: string | null;
   successMessage?: string | null;
@@ -1966,18 +2278,27 @@ export function ComplaintsSection({
     useState('');
 
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
-  const [responseValues, setResponseValues] = useState<ComplaintResponseValues>({
-    status: 'open',
-    manager_feedback: '',
-  });
-  const [responseError, setResponseError] = useState('');
 
-  const openResponse = (complaint: Complaint) => {
+  const [responseValues, setResponseValues] =
+    useState<ComplaintResponseValues>({
+      status: 'open',
+      manager_feedback: '',
+    });
+
+  const [responseError, setResponseError] =
+    useState('');
+
+  const openResponse = (
+    complaint: Complaint
+  ) => {
     setSelectedComplaint(complaint);
+
     setResponseValues({
       status: complaint.status,
-      manager_feedback: complaint.manager_feedback ?? '',
+      manager_feedback:
+        complaint.manager_feedback ?? '',
     });
+
     setResponseError('');
   };
 
@@ -1988,22 +2309,38 @@ export function ComplaintsSection({
     }
   };
 
-  const submitResponse = async (event: FormEvent<HTMLFormElement>) => {
+  const submitResponse = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
 
-    if (!selectedComplaint || !responseValues.manager_feedback.trim()) {
-      setResponseError('Manager feedback is required.');
+    if (
+      !selectedComplaint ||
+      !responseValues.manager_feedback.trim()
+    ) {
+      setResponseError(
+        'Manager feedback is required.'
+      );
+
       return;
     }
 
     try {
-      await onUpdateComplaint(selectedComplaint.id, {
-        ...responseValues,
-        manager_feedback: responseValues.manager_feedback.trim(),
-      });
+      await onUpdateComplaint(
+        selectedComplaint.id,
+        {
+          ...responseValues,
+          manager_feedback:
+            responseValues.manager_feedback.trim(),
+        }
+      );
+
       setSelectedComplaint(null);
+
     } catch {
-      setResponseError('Unable to save the response.');
+      setResponseError(
+        'Unable to save the response.'
+      );
     }
   };
 
@@ -2011,7 +2348,10 @@ export function ComplaintsSection({
     useMemo(() => {
       return complaints.filter(
         (item) => {
-          const tenant = complaintSubmitterName(item);
+          const tenant =
+            complaintSubmitterName(
+              item
+            );
 
           return matches(
             [
@@ -2034,7 +2374,13 @@ export function ComplaintsSection({
         description="Manage resident complaints and responses."
       />
 
-      <Feedback message={successMessage ?? apiError ?? ''} />
+      <Feedback
+        message={
+          successMessage ??
+          apiError ??
+          ''
+        }
+      />
 
       <ModuleToolbar
         search={search}
@@ -2043,60 +2389,62 @@ export function ComplaintsSection({
       />
 
       <DataTable
-            headers={[
-              'Complaint',
-              'Tenant',
-              'Apartment / Unit',
-              'Description',
-              'Status',
-              'Action',
-              'Created',
-            ]}
-          >
-            {complaintRecords.map(
-              (item) => (
-                <tr key={item.id}>
-                  <td className="manager-table__primary">
-                    {item.title}
-                  </td>
+        headers={[
+          'Complaint',
+          'Tenant',
+          'Apartment / Unit',
+          'Description',
+          'Status',
+          'Action',
+          'Created',
+        ]}
+      >
+        {complaintRecords.map(
+          (item) => (
+            <tr key={item.id}>
+              <td className="manager-table__primary">
+                {item.title}
+              </td>
 
-                  <td>
-                    {complaintSubmitterName(item)}
-                  </td>
+              <td>
+                {complaintSubmitterName(item)}
+              </td>
 
-                  <td>
-                    {item.apartment_unit ?? '—'}
-                  </td>
+              <td>
+                {item.apartment_unit ?? '—'}
+              </td>
 
-                  <td>
-                    {item.description}
-                  </td>
+              <td>
+                {item.description}
+              </td>
 
-                  <td>
-                    <StatusBadge
-                      value={
-                        item.status
-                      }
-                    />
-                  </td>
+              <td>
+                <StatusBadge
+                  value={
+                    item.status
+                  }
+                />
+              </td>
 
-                  <td>
-                    <button
-                      type="button"
-                      className="manager-secondary-button"
-                      onClick={() => openResponse(item)}
-                    >
-                      View / Respond
-                    </button>
-                  </td>
+              <td>
+                <button
+                  type="button"
+                  className="manager-secondary-button"
+                  onClick={() =>
+                    openResponse(item)
+                  }
+                >
+                  View / Respond
+                </button>
+              </td>
 
-                  <td>
-                    {item.created_at ??
-                      '—'}
-                  </td>
-                </tr>
-              )
-            )}
+              <td>
+                {item.created_at ??
+                  '—'}
+              </td>
+            </tr>
+          )
+        )}
       </DataTable>
 
       {!complaintRecords.length && (
@@ -2114,47 +2462,87 @@ export function ComplaintsSection({
         {selectedComplaint && (
           <form onSubmit={submitResponse}>
             {responseError && (
-              <div className="manager-form-error">{responseError}</div>
+              <div className="manager-form-error">
+                {responseError}
+              </div>
             )}
 
             <div className="manager-form-grid">
               <Field label="Complaint">
-                <input value={selectedComplaint.title} readOnly />
+                <input
+                  value={
+                    selectedComplaint.title
+                  }
+                  readOnly
+                />
               </Field>
 
               <Field label="Tenant">
                 <input
-                  value={complaintSubmitterName(selectedComplaint)}
+                  value={complaintSubmitterName(
+                    selectedComplaint
+                  )}
                   readOnly
                 />
               </Field>
 
               <Field label="Apartment / Unit">
-                <input value={selectedComplaint.apartment_unit ?? ''} readOnly />
+                <input
+                  value={
+                    selectedComplaint.apartment_unit ??
+                    ''
+                  }
+                  readOnly
+                />
               </Field>
 
-              <Field label="Status" required>
+              <Field
+                label="Status"
+                required
+              >
                 <select
-                  value={responseValues.status}
-                  onChange={(event) => setResponseValues({
-                    ...responseValues,
-                    status: event.target.value as Complaint['status'],
-                  })}
+                  value={
+                    responseValues.status
+                  }
+                  onChange={(event) =>
+                    setResponseValues({
+                      ...responseValues,
+                      status:
+                        event.target
+                          .value as Complaint['status'],
+                    })
+                  }
                 >
-                  <option value="open">Open</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="resolved">Resolved</option>
+                  <option value="open">
+                    Open
+                  </option>
+
+                  <option value="in_progress">
+                    In Progress
+                  </option>
+
+                  <option value="resolved">
+                    Resolved
+                  </option>
                 </select>
               </Field>
 
-              <Field label="Manager feedback" required>
+              <Field
+                label="Manager feedback"
+                required
+              >
                 <textarea
                   rows={6}
-                  value={responseValues.manager_feedback}
-                  onChange={(event) => setResponseValues({
-                    ...responseValues,
-                    manager_feedback: event.target.value,
-                  })}
+                  value={
+                    responseValues.manager_feedback
+                  }
+                  onChange={(event) =>
+                    setResponseValues({
+                      ...responseValues,
+                      manager_feedback:
+                        event.target.value,
+                    })
+                  }
                   placeholder="Write a response for the tenant..."
                 />
               </Field>

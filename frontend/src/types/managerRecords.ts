@@ -78,11 +78,21 @@ export interface Tenant {
   id: RecordId;
 
   user_id: RecordId;
-  flat_id: RecordId;
 
-  move_in_date: string;
-  lease_start: string;
-  lease_end: string;
+  /*
+   * A tenant can be onboarded before selecting
+   * an apartment/flat.
+   */
+  manager_id?: RecordId | null;
+  flat_id?: RecordId | null;
+
+  /*
+   * Lease information can also be empty during
+   * the initial onboarding stage.
+   */
+  move_in_date?: string | null;
+  lease_start?: string | null;
+  lease_end?: string | null;
 
   user?: TenantUser | null;
   flat?: Flat | null;
@@ -93,10 +103,11 @@ export interface Tenant {
 
 export type TenantFormValues = {
   user_id: RecordId | '';
-  flat_id: RecordId | '';
-  move_in_date: string;
-  lease_start: string;
-  lease_end: string;
+  flat_id?: RecordId | '';
+
+  move_in_date?: string;
+  lease_start?: string;
+  lease_end?: string;
 };
 
 

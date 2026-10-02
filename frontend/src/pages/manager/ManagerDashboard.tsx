@@ -44,6 +44,8 @@ import {
   deleteManagerNotice,
 
   getManagerTenants,
+  getManagerEligibleTenants,
+  onboardManagerTenant,
   getManagerUtilityBills,
   getManagerComplaints,
   updateManagerComplaint,
@@ -60,8 +62,14 @@ import type {
   NoticeFormValues,
   RecordId,
   RentPayment,
+  TenantFormValues,
   UtilityBillFormValues,
 } from '../../types/managerRecords';
+
+import type {
+  EligibleTenantUser,
+  TenantOnboardingValues,
+} from '../../services/managerApi';
 
 import '../../styles/manager-dashboard.css';
 
@@ -85,17 +93,21 @@ function ManagerDashboard() {
   const [rentPayments, setRentPayments] = useState<RentPayment[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
 
-  /*
-  | Tenants and utility bills are loaded from Laravel too.
-  | We keep them as unknown[] here because your existing section
-  | components currently have their own data shape.
-  |
-  | Once we update those sections, these can be strongly typed.
-  */
-
   const [tenants, setTenants] = useState<any[]>([]);
   const [utilityBills, setUtilityBills] = useState<any[]>([]);
   const [complaints, setComplaints] = useState<Complaint[]>([]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | TENANT ONBOARDING
+  |--------------------------------------------------------------------------
+  */
+
+  const [eligibleTenantUsers, setEligibleTenantUsers] =
+    useState<EligibleTenantUser[]>([]);
+
+  const [eligibleTenantsLoading, setEligibleTenantsLoading] =
+    useState(false);
 
   /*
   |--------------------------------------------------------------------------
@@ -192,18 +204,10 @@ function ManagerDashboard() {
         getManagerFlats(),
         getManagerRentPayments(),
         getManagerNotices(),
-
-        // REAL Laravel endpoints
         getManagerTenants(),
         getManagerUtilityBills(),
         getManagerComplaints(),
       ]);
-
-      /*
-      |--------------------------------------------------------------------------
-      | Store REAL backend data
-      |--------------------------------------------------------------------------
-      */
 
       setApartments(
         apartmentsResponse.data ?? []
@@ -229,7 +233,9 @@ function ManagerDashboard() {
         utilityBillsResponse.data ?? []
       );
 
-      setComplaints(complaintsResponse.data ?? []);
+      setComplaints(
+        complaintsResponse.data ?? []
+      );
 
     } catch (error) {
       console.error(
@@ -245,6 +251,166 @@ function ManagerDashboard() {
     }
   }, [user]);
 
+  /*
+  |--------------------------------------------------------------------------
+  | LOAD ELIGIBLE TENANT USERS
+  |--------------------------------------------------------------------------
+  */
+
+  const loadEligibleTenantUsers = useCallback(async () => {
+    try {
+      setEligibleTenantsLoading(true);
+
+      const response =
+        await getManagerEligibleTenants();
+
+      setEligibleTenantUsers(
+        response.data ?? []
+      );
+
+    } catch (error) {
+      console.error(
+        'Failed to load eligible tenant users:',
+        error
+      );
+
+      setApiError(
+        getErrorMessage(error)
+      );
+
+    } finally {
+      setEligibleTenantsLoading(false);
+    }
+  }, []);
+
+  /*
+  |--------------------------------------------------------------------------
+  | TENANT ONBOARDING
+  |--------------------------------------------------------------------------
+  */
+
+  const handleCreateTenant = async (
+    values: TenantFormValues
+  ) => {
+    const onboardingValues: TenantOnboardingValues = {
+      user_id: values.user_id,
+      flat_id:
+        values.flat_id === '' ||
+        values.flat_id === undefined
+          ? null
+          : values.flat_id,
+      move_in_date:
+        values.move_in_date || null,
+      lease_start:
+        values.lease_start || null,
+      lease_end:
+        values.lease_end || null,
+    };
+
+    try {
+      setSubmitting(true);
+      clearMessages();
+
+      const response =
+        await onboardManagerTenant(
+          onboardingValues
+        );
+
+      if (response.data) {
+        setTenants((current) => [
+          response.data,
+          ...current,
+        ]);
+      }
+
+      /*
+      | Reload the tenant list from Laravel so the
+      | newly onboarded user appears exactly as the
+      | backend returns it.
+      */
+      const tenantsResponse =
+        await getManagerTenants();
+
+      setTenants(
+        tenantsResponse.data ?? []
+      );
+
+      /*
+      | Refresh eligible users so the onboarded
+      | account disappears from the Add Tenant list.
+      */
+      await loadEligibleTenantUsers();
+
+      setSuccessMessage(
+        response.message ??
+          'Tenant onboarded successfully.'
+      );
+
+    } catch (error) {
+      console.error(
+        'Failed to onboard tenant:',
+        error
+      );
+
+      setApiError(
+        getErrorMessage(error)
+      );
+
+      throw error;
+
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | TENANT UPDATE
+  |--------------------------------------------------------------------------
+  */
+
+  const handleUpdateTenant = async (
+    id: RecordId,
+    values: TenantFormValues
+  ) => {
+    /*
+    | Tenant editing is not part of the new onboarding
+    | workflow yet. Keep this callback available for the
+    | existing TenantSection API without changing the
+    | current backend behavior.
+    */
+    console.warn(
+      'Tenant update requested:',
+      id,
+      values
+    );
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | TENANT DELETE
+  |--------------------------------------------------------------------------
+  */
+
+  const handleDeleteTenant = async (
+    id: RecordId
+  ) => {
+    /*
+    | Tenant deletion is intentionally left unchanged
+    | until the tenant-management UI exposes that action.
+    */
+    console.warn(
+      'Tenant delete requested:',
+      id
+    );
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | COMPLAINT UPDATE
+  |--------------------------------------------------------------------------
+  */
+
   const handleUpdateComplaint = async (
     id: RecordId,
     values: ComplaintResponseValues
@@ -253,15 +419,31 @@ function ManagerDashboard() {
       setSubmitting(true);
       clearMessages();
 
-      const response = await updateManagerComplaint(id, values);
+      const response =
+        await updateManagerComplaint(
+          id,
+          values
+        );
 
-      setComplaints((current) => current.map((complaint) =>
-        String(complaint.id) === String(id) ? response.data : complaint
-      ));
-      setSuccessMessage('Complaint response saved successfully.');
+      setComplaints((current) =>
+        current.map((complaint) =>
+          String(complaint.id) === String(id)
+            ? response.data
+            : complaint
+        )
+      );
+
+      setSuccessMessage(
+        'Complaint response saved successfully.'
+      );
+
     } catch (error) {
-      setApiError(getErrorMessage(error));
+      setApiError(
+        getErrorMessage(error)
+      );
+
       throw error;
+
     } finally {
       setSubmitting(false);
     }
@@ -740,7 +922,8 @@ function ManagerDashboard() {
         }
       );
 
-      const data = await response.json().catch(() => ({}));
+      const data =
+        await response.json().catch(() => ({}));
 
       if (!response.ok) {
         throw {
@@ -826,6 +1009,23 @@ function ManagerDashboard() {
         return (
           <TenantsSection
             tenants={tenants}
+            eligibleTenantUsers={eligibleTenantUsers}
+            eligibleTenantsLoading={
+              eligibleTenantsLoading
+            }
+            onLoadEligibleTenants={
+              loadEligibleTenantUsers
+            }
+            onCreate={
+              handleCreateTenant
+            }
+            onUpdate={
+              handleUpdateTenant
+            }
+            onDelete={
+              handleDeleteTenant
+            }
+            submitting={submitting}
           />
         );
 
@@ -852,7 +1052,9 @@ function ManagerDashboard() {
         return (
           <ComplaintsSection
             complaints={complaints}
-            onUpdateComplaint={handleUpdateComplaint}
+            onUpdateComplaint={
+              handleUpdateComplaint
+            }
             submitting={submitting}
             apiError={apiError}
             successMessage={successMessage}
