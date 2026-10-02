@@ -127,7 +127,7 @@ export function AuthProvider({
    */
   function loginWithGoogle(): void {
     window.location.href =
-      "http://127.0.0.1:8000/api/auth/google";
+      "/api/auth/google";
   }
 
   /*

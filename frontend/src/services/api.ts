@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = "/api";
 
 export async function apiRequest<T>(
   endpoint: string,

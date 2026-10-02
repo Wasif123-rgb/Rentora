@@ -9,6 +9,7 @@ node_modules/
 # Build output
 dist/
 build/
+/backend/public/app/
 
 # TypeScript build information
 *.tsbuildinfo

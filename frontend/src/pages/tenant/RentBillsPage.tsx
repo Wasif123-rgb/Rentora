@@ -1246,10 +1246,7 @@ function RentBillsPage({
             );
           }
 
-          const apiUrl =
-            import.meta.env
-              .VITE_API_URL ||
-            "http://127.0.0.1:8000/api";
+          const apiUrl = "/api";
 
           const response =
             await fetch(
@@ -1715,10 +1712,7 @@ function RentBillsContent({
           return;
         }
 
-        const apiUrl =
-          import.meta.env
-            .VITE_API_URL ||
-          "http://127.0.0.1:8000/api";
+        const apiUrl = "/api";
 
         const response =
           await fetch(
