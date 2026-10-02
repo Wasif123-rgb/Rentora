@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Role;
+use App\Models\Notice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -51,16 +52,49 @@ class ComplaintWorkflowTest extends TestCase
             ->assertJsonPath('data.status', 'in_progress')
             ->assertJsonPath('data.responded_by', $manager->id);
 
+        $generalNotice = Notice::create([
+            'published_by' => $manager->id,
+            'title' => 'Water maintenance',
+            'content' => 'Water service will be tested this week.',
+        ]);
+
         Sanctum::actingAs($tenantUser);
         $this->getJson('/api/tenant/complaints')
             ->assertOk()
             ->assertJsonPath('complaints.data.0.id', $complaintId)
             ->assertJsonPath('complaints.data.0.manager_feedback', 'A plumber has been assigned and will attend tomorrow.');
 
+        $this->getJson('/api/tenant/dashboard')
+            ->assertOk()
+            ->assertJsonFragment([
+                'id' => $complaintId,
+                'type' => 'complaint_feedback',
+                'title' => 'Complaint Update: No water',
+                'content' => 'A plumber has been assigned and will attend tomorrow.',
+                'status' => 'in_progress',
+            ])
+            ->assertJsonFragment([
+                'id' => $generalNotice->id,
+                'type' => 'notice',
+                'title' => 'Water maintenance',
+                'content' => 'Water service will be tested this week.',
+            ]);
+
         Sanctum::actingAs($otherTenantUser);
         $this->getJson('/api/tenant/complaints')
             ->assertOk()
             ->assertJsonMissing(['id' => $complaintId]);
+
+        $this->getJson('/api/tenant/dashboard')
+            ->assertOk()
+            ->assertJsonMissing([
+                'type' => 'complaint_feedback',
+                'content' => 'A plumber has been assigned and will attend tomorrow.',
+            ])
+            ->assertJsonFragment([
+                'type' => 'notice',
+                'title' => 'Water maintenance',
+            ]);
     }
 
     public function test_tenant_history_only_contains_authenticated_users_complaints(): void

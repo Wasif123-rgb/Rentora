@@ -77,10 +77,12 @@ export interface TenantDashboardData {
 
   notices: {
     id: number;
+    type: "notice" | "complaint_feedback";
     title: string;
     content: string;
-    published_by: number;
+    published_by: number | null;
     created_at: string;
+    status: "open" | "in_progress" | "resolved" | null;
   }[];
 }
 
