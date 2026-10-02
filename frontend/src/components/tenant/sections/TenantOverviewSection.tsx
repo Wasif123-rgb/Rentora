@@ -15,6 +15,7 @@ interface TenantOverviewSectionProps {
 function TenantOverviewSection({
   dashboard,
 }: TenantOverviewSectionProps) {
+  console.log("TENANT DASHBOARD NOTICES:", dashboard.notices);
   const firstName =
     dashboard.tenant?.name?.split(" ")[0] || "Tenant";
 
@@ -186,29 +187,7 @@ function TenantOverviewSection({
 
         <QuickActions />
 
-        <NoticeBoard
-          notices={dashboard.notices.map((notice) => ({
-            id: notice.id,
-            type: notice.type,
-            title: notice.title,
-            preview: notice.content,
-            date: new Intl.DateTimeFormat("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            }).format(new Date(notice.created_at)),
-            icon:
-              notice.type === "complaint_feedback"
-                ? "bi-chat-left-text"
-                : "bi-megaphone",
-            status:
-              notice.type === "complaint_feedback"
-                ? notice.status
-                    ?.replace("_", " ")
-                    .replace(/\b\w/g, (letter) => letter.toUpperCase())
-                : null,
-          }))}
-        />
+        <NoticeBoard notices={dashboard.notices} />
       </aside>
     </div>
   );

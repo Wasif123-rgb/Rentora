@@ -3462,3 +3462,152 @@ textarea {
   }
 }
 
+/* =========================================================
+   TENANT DASHBOARD NOTICE BOARD
+   ========================================================= */
+
+.notice-card {
+  width: 100%;
+  min-width: 0;
+}
+
+.notice-card .notice-list {
+  display: grid;
+  gap: 12px;
+}
+
+.notice-card .notice-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+
+  width: 100%;
+  min-width: 0;
+
+  padding: 16px;
+
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+}
+
+.notice-card .notice-icon {
+  width: 38px;
+  height: 38px;
+
+  flex: 0 0 38px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 12px;
+
+  background: rgba(96, 165, 250, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+
+  color: #93c5fd;
+}
+
+.notice-card .notice-content {
+  flex: 1;
+  min-width: 0;
+
+  display: grid;
+  gap: 7px;
+}
+
+.notice-card .notice-content-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.notice-card .notice-content-top strong {
+  color: #ffffff;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.notice-card .notice-content p {
+  margin: 0;
+
+  color: #9fb2da;
+  font-size: 0.82rem;
+  line-height: 1.6;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.notice-card .notice-tag {
+  flex-shrink: 0;
+
+  color: #93c5fd;
+
+  font-size: 0.68rem;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+.notice-card .notice-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
+.notice-card .notice-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.notice-card .notice-meta i {
+  color: #93c5fd;
+}
+
+.notice-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 18px;
+
+  border: 1px dashed rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.notice-empty > i {
+  font-size: 1.3rem;
+  color: #93c5fd;
+}
+
+.notice-empty div {
+  display: grid;
+  gap: 3px;
+}
+
+.notice-empty strong {
+  color: #f8fafc;
+}
+
+.notice-empty small {
+  color: #94a3b8;
+}
+
+@media (max-width: 799px) {
+  .notice-card .notice-content-top {
+    display: grid;
+    gap: 5px;
+  }
+
+  .notice-card .notice-tag {
+    justify-self: start;
+  }
+}
