@@ -58,7 +58,7 @@ class TenantDashboardController extends Controller
                 'recent_payments' => [],
                 'recent_complaints' => [],
                 'recent_maintenance_requests' => [],
-                'notices' => $this->notices(),
+                'notices' => $this->notices($request),
             ]);
         }
 
@@ -164,7 +164,7 @@ class TenantDashboardController extends Controller
                     'status' => $request->status,
                 ]),
 
-            'notices' => $this->notices(),
+            'notices' => $this->notices($request),
         ]);
     }
 
@@ -306,19 +306,49 @@ class TenantDashboardController extends Controller
      * Notices are currently global because the notices table has no
      * tenant/apartment/flat foreign key.
      */
-    private function notices()
+    private function notices(Request $request)
     {
-        return Notice::with('publisher')
+        $generalNotices = Notice::with('publisher')
             ->latest()
-            ->take(10)
             ->get()
             ->map(fn ($notice) => [
                 'id' => $notice->id,
+                'type' => 'notice',
                 'title' => $notice->title,
                 'content' => $notice->content,
                 'published_by' => $notice->published_by,
                 'created_at' => $notice->created_at,
-            ])
+                'status' => null,
+            ]);
+
+        $userId = $request->user()->id;
+
+        $complaintFeedback = Complaint::query()
+            ->whereNotNull('manager_feedback')
+            ->where(function ($query) use ($userId) {
+                $query->where('submitted_by', $userId)
+                    ->orWhere(function ($legacyQuery) use ($userId) {
+                        $legacyQuery->whereNull('submitted_by')
+                            ->whereHas('tenant', fn ($tenantQuery) =>
+                                $tenantQuery->where('user_id', $userId)
+                            );
+                    });
+            })
+            ->get()
+            ->map(fn ($complaint) => [
+                'id' => $complaint->id,
+                'type' => 'complaint_feedback',
+                'title' => 'Complaint Update: '.$complaint->title,
+                'content' => $complaint->manager_feedback,
+                'published_by' => $complaint->responded_by,
+                'created_at' => $complaint->responded_at ?? $complaint->updated_at,
+                'status' => $complaint->status,
+            ]);
+
+        return $generalNotices
+            ->concat($complaintFeedback)
+            ->sortByDesc('created_at')
+            ->take(10)
             ->values();
     }
 

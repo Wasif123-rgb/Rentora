@@ -2,10 +2,12 @@ import { Link } from "react-router-dom";
 
 interface TenantNotice {
   id: number;
+  type: "notice" | "complaint_feedback";
   title: string;
   preview: string;
   date: string;
   icon: string;
+  status?: string | null;
 }
 
 interface NoticeBoardProps {
@@ -29,7 +31,7 @@ function NoticeBoard({
         {notices.length > 0 ? (
           notices.map((notice) => (
             <div
-              key={notice.id}
+              key={`${notice.type}-${notice.id}`}
               className="notice-item"
             >
               <div className="notice-text">
@@ -38,6 +40,12 @@ function NoticeBoard({
                 <small>
                   {notice.preview}
                 </small>
+
+                {notice.status && (
+                  <small>
+                    Status: {notice.status}
+                  </small>
+                )}
               </div>
 
               <div className="notice-tag">

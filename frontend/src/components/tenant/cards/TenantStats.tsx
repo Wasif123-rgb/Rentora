@@ -23,10 +23,6 @@ interface TenantStatsProps {
 
   notices: {
     id: number;
-    title: string;
-    content: string;
-    published_by: number;
-    created_at: string;
   }[];
 }
 
