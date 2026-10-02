@@ -910,7 +910,7 @@ function ManagerDashboard() {
       clearMessages();
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/manager/utility-bills`,
+        "/api/manager/utility-bills",
         {
           method: 'POST',
           headers: {

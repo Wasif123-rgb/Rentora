@@ -1,0 +1,128 @@
+name: Deploy Rentora
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  DEPLOY_USER: s20230204003
+  DEPLOY_HOST: 187.52.122.100
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, bcmath, pdo_mysql
+          tools: composer:v2
+
+      - name: Install Laravel dependencies
+        working-directory: backend
+        run: |
+          composer install \
+            --no-dev \
+            --prefer-dist \
+            --optimize-autoloader \
+            --no-interaction
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Verify React production build
+        run: |
+          test -f backend/public/app/index.html
+          test -d backend/public/app/assets
+
+      - name: Create deployment archive
+        run: |
+          tar -czf release.tar.gz \
+            --exclude='.env' \
+            --exclude='storage' \
+            --exclude='node_modules' \
+            --exclude='.git' \
+            -C backend .
+
+          tar -tzf release.tar.gz | grep -q '^./public/app/index.html$'
+
+          if tar -tzf release.tar.gz | grep -E '(^|/)\.env($|/)|(^|/)\.git(/|$)|(^|/)node_modules(/|$)'; then
+            echo "Forbidden files found in release archive"
+            exit 1
+          fi
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+
+          printf '%s\n' '${{ secrets.SSH_PRIVATE_KEY }}' \
+            > ~/.ssh/cse3100_deploy
+
+          chmod 600 ~/.ssh/cse3100_deploy
+
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Upload release to VPS
+        run: |
+          scp \
+            -i ~/.ssh/cse3100_deploy \
+            -o IdentitiesOnly=yes \
+            release.tar.gz \
+            "$DEPLOY_USER@$DEPLOY_HOST:~/release.tar.gz"
+
+      - name: Deploy on VPS
+        run: |
+          ssh \
+            -i ~/.ssh/cse3100_deploy \
+            -o IdentitiesOnly=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" 'bash -s' <<'EOF'
+          set -e
+
+          rm -rf "$HOME/laravel-release"
+          mkdir -p "$HOME/laravel-release"
+          mkdir -p "$HOME/laravel"
+
+          tar -xzf "$HOME/release.tar.gz" \
+            -C "$HOME/laravel-release"
+
+          rsync -a --delete \
+            --exclude='.env' \
+            --exclude='storage/' \
+            "$HOME/laravel-release/" "$HOME/laravel/"
+
+          mkdir -p "$HOME/laravel/storage/framework/cache"
+          mkdir -p "$HOME/laravel/storage/framework/sessions"
+          mkdir -p "$HOME/laravel/storage/framework/views"
+          mkdir -p "$HOME/laravel/storage/logs"
+
+          chmod -R u+rwX \
+            "$HOME/laravel/storage" \
+            "$HOME/laravel/bootstrap/cache"
+
+          cd "$HOME/laravel"
+
+          php artisan migrate --force
+          php artisan optimize
+
+          rm -rf "$HOME/laravel-release"
+          rm -f "$HOME/release.tar.gz"
+          EOF
