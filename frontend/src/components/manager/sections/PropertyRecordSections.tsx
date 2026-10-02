@@ -1070,39 +1070,24 @@ export function FlatsSection({
                 </td>
 
                 <td>
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: '6px',
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openEdit(
-                          item
-                        )
-                      }
-                    >
-                      Edit
-                    </button>
+  <div className="manager-table-actions">
+    <button
+      type="button"
+      onClick={() => openEdit(item)}
+    >
+      Edit
+    </button>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        deleteFlat(
-                          item
-                        )
-                      }
-                      disabled={
-                        submitting
-                      }
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
+    <button
+      type="button"
+      className="danger"
+      onClick={() => deleteFlat(item)}
+      disabled={submitting}
+    >
+      Delete
+    </button>
+  </div>
+</td>
               </tr>
             );
           })}

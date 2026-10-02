@@ -5,18 +5,24 @@ namespace App\Http\Controllers;
 use App\Models\Apartment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class ManagerApartmentController extends Controller
 {
-    /**
-     * List apartments owned by the authenticated manager.
-     */
     public function index(Request $request): JsonResponse
     {
         $apartments = Apartment::query()
             ->where('manager_id', $request->user()->id)
-            ->withCount('flats')
+            ->withCount([
+                'flats as total_flats',
+
+                'flats as occupied_flats' => function ($query) {
+                    $query->where('status', 'occupied');
+                },
+
+                'flats as vacant_flats' => function ($query) {
+                    $query->where('status', 'vacant');
+                },
+            ])
             ->latest()
             ->get();
 
@@ -26,9 +32,6 @@ class ManagerApartmentController extends Controller
         ]);
     }
 
-    /**
-     * Create an apartment for the authenticated manager.
-     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -45,13 +48,10 @@ class ManagerApartmentController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Apartment created successfully.',
-            'data' => $apartment->loadCount('flats'),
+            'data' => $this->withFlatStats($apartment),
         ], 201);
     }
 
-    /**
-     * Show one apartment belonging to the authenticated manager.
-     */
     public function show(Request $request, int $id): JsonResponse
     {
         $apartment = $this->findOwnedApartment(
@@ -59,15 +59,22 @@ class ManagerApartmentController extends Controller
             $id
         );
 
+        $apartment->load('flats');
+
+        $apartment->total_flats = $apartment->flats->count();
+        $apartment->occupied_flats = $apartment->flats
+            ->where('status', 'occupied')
+            ->count();
+        $apartment->vacant_flats = $apartment->flats
+            ->where('status', 'vacant')
+            ->count();
+
         return response()->json([
             'success' => true,
-            'data' => $apartment->load('flats'),
+            'data' => $apartment,
         ]);
     }
 
-    /**
-     * Update an apartment belonging to the authenticated manager.
-     */
     public function update(Request $request, int $id): JsonResponse
     {
         $apartment = $this->findOwnedApartment(
@@ -85,13 +92,10 @@ class ManagerApartmentController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Apartment updated successfully.',
-            'data' => $apartment->fresh()->loadCount('flats'),
+            'data' => $this->withFlatStats($apartment->fresh()),
         ]);
     }
 
-    /**
-     * Delete an apartment belonging to the authenticated manager.
-     */
     public function destroy(Request $request, int $id): JsonResponse
     {
         $apartment = $this->findOwnedApartment(
@@ -107,13 +111,26 @@ class ManagerApartmentController extends Controller
         ]);
     }
 
-    /**
-     * Find an apartment belonging to the specified manager.
-     *
-     * A manager cannot access another manager's apartment.
-     */
-    private function findOwnedApartment(int $managerId, int $apartmentId): Apartment
+    private function withFlatStats(Apartment $apartment): Apartment
     {
+        return $apartment
+            ->loadCount([
+                'flats as total_flats',
+
+                'flats as occupied_flats' => function ($query) {
+                    $query->where('status', 'occupied');
+                },
+
+                'flats as vacant_flats' => function ($query) {
+                    $query->where('status', 'vacant');
+                },
+            ]);
+    }
+
+    private function findOwnedApartment(
+        int $managerId,
+        int $apartmentId
+    ): Apartment {
         return Apartment::query()
             ->where('manager_id', $managerId)
             ->findOrFail($apartmentId);

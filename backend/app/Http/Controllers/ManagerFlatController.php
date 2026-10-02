@@ -16,7 +16,10 @@ class ManagerFlatController extends Controller
     {
         $manager = $request->user();
 
-        $flats = Flat::with('apartment')
+        $flats = Flat::with([
+            'apartment',
+            'tenant.user',
+        ])
             ->whereHas('apartment', function ($query) use ($manager) {
                 $query->where('manager_id', $manager->id);
             })
@@ -89,7 +92,14 @@ class ManagerFlatController extends Controller
             'status' => $request->status ?? 'vacant',
         ]);
 
-        $flat->load('apartment');
+        /*
+         * Load the apartment and tenant/user relationship so the
+         * frontend receives the same structure as the list endpoint.
+         */
+        $flat->load([
+            'apartment',
+            'tenant.user',
+        ]);
 
         return response()->json([
             'success' => true,
@@ -110,7 +120,10 @@ class ManagerFlatController extends Controller
             ], 403);
         }
 
-        $flat->load('apartment', 'tenant');
+        $flat->load([
+            'apartment',
+            'tenant.user',
+        ]);
 
         return response()->json([
             'success' => true,
@@ -175,6 +188,7 @@ class ManagerFlatController extends Controller
             $flat->flat_number
         );
 
+        // Prevent duplicate flat numbers inside the same apartment.
         $duplicate = Flat::where('apartment_id', $apartmentId)
             ->where('flat_number', $flatNumber)
             ->where('id', '!=', $flat->id)
@@ -195,7 +209,15 @@ class ManagerFlatController extends Controller
             'status',
         ]));
 
-        $flat->load('apartment', 'tenant');
+        /*
+         * Load the tenant's user as well, because the frontend uses:
+         *
+         * item.tenant?.user?.name
+         */
+        $flat->load([
+            'apartment',
+            'tenant.user',
+        ]);
 
         return response()->json([
             'success' => true,
