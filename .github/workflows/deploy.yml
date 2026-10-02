@@ -1,0 +1,115 @@
+name: Deploy Rentora
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, bcmath, pdo_mysql
+          tools: composer:v2
+
+      - name: Install Laravel dependencies
+        working-directory: backend
+        run: composer install --no-dev --prefer-dist --optimize-autoloader
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          VITE_API_URL: http://rentora.austattendance.online/api
+        run: npm run build
+
+      - name: Prepare Laravel public app
+        shell: bash
+        run: |
+          rm -rf backend/public/app
+          mkdir -p backend/public/app
+          cp -R frontend/dist/. backend/public/app/
+
+      - name: Create deployment archive
+        shell: bash
+        run: |
+          tar -czf rentora-release.tar.gz \
+            backend/app \
+            backend/bootstrap \
+            backend/config \
+            backend/database \
+            backend/public \
+            backend/resources \
+            backend/routes \
+            backend/vendor \
+            backend/artisan \
+            backend/composer.json \
+            backend/composer.lock
+
+      - name: Upload release to VPS
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "rentora-release.tar.gz"
+          target: "~/"
+
+      - name: Deploy on VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+
+            cd ~/laravel
+
+            rm -rf release-new
+            mkdir -p release-new
+
+            tar -xzf ~/rentora-release.tar.gz \
+              -C release-new \
+              --strip-components=1
+
+            cp -f .env release-new/.env
+
+            mkdir -p storage/framework/cache
+            mkdir -p storage/framework/sessions
+            mkdir -p storage/framework/views
+            mkdir -p storage/logs
+
+            chmod -R ug+rwX storage
+
+            php release-new/artisan migrate --force
+            php release-new/artisan optimize
+
+            rsync -a --delete \
+              --exclude='.env' \
+              --exclude='storage/' \
+              release-new/ ./
+
+            chmod 600 .env
+            chmod -R ug+rwX storage
+
+            rm -rf release-new
+            rm -f ~/rentora-release.tar.gz
