@@ -12,14 +12,38 @@ type RouteMeta = {
 };
 
 const routeMetaMap: Record<string, RouteMeta> = {
-  "/tenant/dashboard": { title: "Dashboard", subtitle: "Overview of your home" },
-  "/tenant/apartment": { title: "My Apartment", subtitle: "Details about your apartment" },
-  "/tenant/rent-bills": { title: "Rent & Bills", subtitle: "Payments and billing history" },
-  "/tenant/complaints/new": { title: "Submit Complaint", subtitle: "Report an issue" },
-  "/tenant/complaints": { title: "Complaint History", subtitle: "Track past complaints" },
-  "/tenant/notices": { title: "Notices", subtitle: "Community announcements" },
-  "/tenant/profile": { title: "Profile", subtitle: "Manage your profile" },
-  "/tenant/support": { title: "Help & Support", subtitle: "Get assistance" },
+  "/tenant/dashboard": {
+    title: "Dashboard",
+    subtitle: "Overview of your home",
+  },
+  "/tenant/apartment": {
+    title: "My Apartment",
+    subtitle: "Details about your apartment",
+  },
+  "/tenant/rent-bills": {
+    title: "Rent & Bills",
+    subtitle: "Payments and billing history",
+  },
+  "/tenant/complaints/new": {
+    title: "Submit Complaint",
+    subtitle: "Report an issue",
+  },
+  "/tenant/complaints": {
+    title: "Complaint History",
+    subtitle: "Track past complaints",
+  },
+  "/tenant/notices": {
+    title: "Notices",
+    subtitle: "Community announcements",
+  },
+  "/tenant/profile": {
+    title: "Profile",
+    subtitle: "Manage your profile",
+  },
+  "/tenant/support": {
+    title: "Help & Support",
+    subtitle: "Get assistance",
+  },
 };
 
 function TenantLayout() {
@@ -41,12 +65,20 @@ function TenantLayout() {
 
   const meta = useMemo(() => {
     const path = location.pathname;
-    return routeMetaMap[path] ?? { title: "Tenant Portal", subtitle: "" };
+
+    return (
+      routeMetaMap[path] ?? {
+        title: "Tenant Portal",
+        subtitle: "",
+      }
+    );
   }, [location]);
 
   useEffect(() => {
     if (!isDrawerOpen) return;
+
     const t = window.setTimeout(() => setDrawerOpen(false), 0);
+
     return () => window.clearTimeout(t);
   }, [location.pathname, isDrawerOpen]);
 
@@ -58,19 +90,28 @@ function TenantLayout() {
     }
 
     document.addEventListener("keydown", onKey);
+
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
   useEffect(() => {
     document.body.style.overflow = isDrawerOpen ? "hidden" : "";
+
     return () => {
       document.body.style.overflow = "";
     };
   }, [isDrawerOpen]);
 
   return (
-    <div className={`app-shell tenant-shell ${isDrawerOpen ? "drawer-open" : ""}`}>
-      <TenantSidebar onNavigate={() => setDrawerOpen(false)} isOpen={isDrawerOpen} />
+    <div
+      className={`app-shell tenant-shell ${
+        isDrawerOpen ? "drawer-open" : ""
+      }`}
+    >
+      <TenantSidebar
+        onNavigate={() => setDrawerOpen(false)}
+        isOpen={isDrawerOpen}
+      />
 
       <div className="tenant-shell__content">
         <TenantTopbar
@@ -78,6 +119,8 @@ function TenantLayout() {
           subtitle={meta.subtitle}
           onMenuToggle={() => setDrawerOpen((v) => !v)}
           isMenuOpen={isDrawerOpen}
+          userName={user.name}
+          userRole={user.role}
         />
 
         <div className="tenant-shell__page">
