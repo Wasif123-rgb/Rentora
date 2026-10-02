@@ -8,6 +8,7 @@ class Tenant extends Model
 {
     protected $fillable = [
         'user_id',
+        'manager_id',
         'flat_id',
         'move_in_date',
         'lease_start',
@@ -17,6 +18,11 @@ class Tenant extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function manager()
+    {
+        return $this->belongsTo(User::class, 'manager_id');
     }
 
     public function flat()

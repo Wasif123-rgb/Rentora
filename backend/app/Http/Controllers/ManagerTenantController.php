@@ -11,7 +11,10 @@ use Illuminate\Support\Facades\Validator;
 class ManagerTenantController extends Controller
 {
     /**
-     * List tenants belonging to the authenticated manager's portfolio.
+     * List tenants belonging to the authenticated manager.
+     *
+     * Assigned tenants are owned through their apartment.
+     * Unassigned tenants are temporarily owned through tenants.manager_id.
      */
     public function index(Request $request)
     {
@@ -21,8 +24,16 @@ class ManagerTenantController extends Controller
                 'user',
                 'flat.apartment',
             ])
-            ->whereHas('flat.apartment', function ($query) use ($manager) {
-                $query->where('manager_id', $manager->id);
+            ->where(function ($query) use ($manager) {
+                $query
+                    ->where(function ($unassignedQuery) use ($manager) {
+                        $unassignedQuery
+                            ->whereNull('flat_id')
+                            ->where('manager_id', $manager->id);
+                    })
+                    ->orWhereHas('flat.apartment', function ($apartmentQuery) use ($manager) {
+                        $apartmentQuery->where('manager_id', $manager->id);
+                    });
             })
             ->latest()
             ->get();
@@ -34,16 +45,62 @@ class ManagerTenantController extends Controller
     }
 
     /**
-     * Create a tenant on one of the manager's flats.
+     * Existing tenant creation endpoint.
+     *
+     * Kept for compatibility with the existing manager tenant CRUD.
      */
     public function store(Request $request)
     {
+        return $this->onboard($request);
+    }
+
+    /**
+     * Return registered users who can be onboarded as tenants.
+     *
+     * Eligible users:
+     * - have the tenant role
+     * - do not already have a Tenant record
+     */
+    public function eligibleTenants(Request $request)
+    {
+        $users = User::with('role')
+            ->whereHas('role', function ($query) {
+                $query->where('name', 'tenant');
+            })
+            ->whereDoesntHave('tenant')
+            ->orderBy('name')
+            ->get([
+                'id',
+                'name',
+                'email',
+                'phone',
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $users,
+        ]);
+    }
+
+    /**
+     * Onboard an already-registered tenant user.
+     *
+     * A property/flat is optional at this stage.
+     */
+    public function onboard(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'user_id' => 'required|integer|exists:users,id',
-            'flat_id' => 'required|integer|exists:flats,id',
-            'move_in_date' => 'required|date',
-            'lease_start' => 'required|date',
-            'lease_end' => 'required|date|after_or_equal:lease_start',
+
+            'flat_id' => [
+                'nullable',
+                'integer',
+                'exists:flats,id',
+            ],
+
+            'move_in_date' => 'nullable|date',
+            'lease_start' => 'nullable|date',
+            'lease_end' => 'nullable|date|after_or_equal:lease_start',
         ]);
 
         if ($validator->fails()) {
@@ -57,84 +114,96 @@ class ManagerTenantController extends Controller
         $manager = $request->user();
 
         /*
-         * Make sure the flat belongs to this manager.
-         */
-        $flat = Flat::where('id', $request->flat_id)
-            ->whereHas('apartment', function ($query) use ($manager) {
-                $query->where('manager_id', $manager->id);
-            })
-            ->first();
-
-        if (!$flat) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You are not authorized to use this flat.',
-            ], 403);
-        }
-
-        /*
-         * A flat can only have one tenant because flat_id
-         * is unique in the tenants migration.
-         */
-        if ($flat->tenant()->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This flat already has a tenant.',
-            ], 422);
-        }
-
-        /*
-         * Only tenant users should be assigned as tenants.
+         * The selected account must actually be a tenant account.
          */
         $tenantUser = User::with('role')->find($request->user_id);
 
         if (!$tenantUser || $tenantUser->role?->name !== 'tenant') {
             return response()->json([
                 'success' => false,
-                'message' => 'The selected user is not a tenant.',
+                'message' => 'The selected user is not eligible to be onboarded as a tenant.',
             ], 422);
         }
 
         /*
-         * A user should not have multiple tenant records.
+         * A registered user can have only one Tenant record.
          */
         if (Tenant::where('user_id', $tenantUser->id)->exists()) {
             return response()->json([
                 'success' => false,
-                'message' => 'This user is already assigned to a flat.',
+                'message' => 'This user is already assigned as a tenant.',
             ], 422);
         }
 
+        $flat = null;
+
+        /*
+         * A flat is optional.
+         *
+         * If supplied, it must belong to the authenticated manager.
+         */
+        if ($request->filled('flat_id')) {
+            $flat = Flat::where('id', $request->flat_id)
+                ->whereHas('apartment', function ($query) use ($manager) {
+                    $query->where('manager_id', $manager->id);
+                })
+                ->first();
+
+            if (!$flat) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are not authorized to use this flat.',
+                ], 403);
+            }
+
+            /*
+             * One flat can only have one tenant.
+             */
+            if ($flat->tenant()->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This flat already has a tenant.',
+                ], 422);
+            }
+        }
+
+        /*
+         * Create the Tenant record.
+         *
+         * manager_id keeps ownership with the manager while the tenant
+         * has no property selected yet.
+         */
         $tenant = Tenant::create([
             'user_id' => $tenantUser->id,
-            'flat_id' => $flat->id,
-            'move_in_date' => $request->move_in_date,
-            'lease_start' => $request->lease_start,
-            'lease_end' => $request->lease_end,
+            'manager_id' => $manager->id,
+            'flat_id' => $flat?->id,
+            'move_in_date' => $request->input('move_in_date'),
+            'lease_start' => $request->input('lease_start'),
+            'lease_end' => $request->input('lease_end'),
         ]);
 
         /*
-         * Creating a tenant means the flat is occupied.
+         * If a flat was selected during onboarding, mark it occupied.
          */
-        $flat->update([
-            'status' => 'occupied',
-        ]);
+        if ($flat) {
+            $flat->update([
+                'status' => 'occupied',
+            ]);
+        }
 
         $tenant->load([
             'user',
             'flat.apartment',
+            'manager',
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Tenant created successfully.',
+            'message' => 'Tenant onboarded successfully.',
             'data' => $tenant,
         ], 201);
     }
 
-    /**
-     * Show one manager-owned tenant.
-     */
     public function show(Request $request, Tenant $tenant)
     {
         if (!$this->ownsTenant($request, $tenant)) {
@@ -158,9 +227,6 @@ class ManagerTenantController extends Controller
         ]);
     }
 
-    /**
-     * Update a manager-owned tenant.
-     */
     public function update(Request $request, Tenant $tenant)
     {
         if (!$this->ownsTenant($request, $tenant)) {
@@ -172,10 +238,10 @@ class ManagerTenantController extends Controller
 
         $validator = Validator::make($request->all(), [
             'user_id' => 'sometimes|required|integer|exists:users,id',
-            'flat_id' => 'sometimes|required|integer|exists:flats,id',
-            'move_in_date' => 'sometimes|required|date',
-            'lease_start' => 'sometimes|required|date',
-            'lease_end' => 'sometimes|required|date|after_or_equal:lease_start',
+            'flat_id' => 'sometimes|nullable|integer|exists:flats,id',
+            'move_in_date' => 'sometimes|nullable|date',
+            'lease_start' => 'sometimes|nullable|date',
+            'lease_end' => 'sometimes|nullable|date|after_or_equal:lease_start',
         ]);
 
         if ($validator->fails()) {
@@ -189,40 +255,7 @@ class ManagerTenantController extends Controller
         $manager = $request->user();
 
         /*
-         * If changing the flat, make sure the new flat
-         * belongs to the same manager.
-         */
-        if ($request->has('flat_id')) {
-            $newFlat = Flat::where('id', $request->flat_id)
-                ->whereHas('apartment', function ($query) use ($manager) {
-                    $query->where('manager_id', $manager->id);
-                })
-                ->first();
-
-            if (!$newFlat) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You are not authorized to use this flat.',
-                ], 403);
-            }
-
-            /*
-             * Don't allow moving onto an already occupied flat.
-             */
-            if (
-                $newFlat->id !== $tenant->flat_id &&
-                $newFlat->tenant()->exists()
-            ) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'The selected flat already has a tenant.',
-                ], 422);
-            }
-        }
-
-        /*
-         * If changing the user, ensure they are a tenant
-         * and aren't already assigned elsewhere.
+         * Validate a replacement user.
          */
         if ($request->has('user_id')) {
             $newUser = User::with('role')->find($request->user_id);
@@ -241,37 +274,93 @@ class ManagerTenantController extends Controller
             if ($existingTenant) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'This user is already assigned to a flat.',
+                    'message' => 'This user is already assigned as a tenant.',
                 ], 422);
             }
         }
 
         $oldFlatId = $tenant->flat_id;
 
-        $tenant->update($request->only([
+        /*
+         * Validate a replacement flat.
+         *
+         * null is allowed because a tenant can become unassigned.
+         */
+        $newFlat = null;
+
+        if ($request->has('flat_id') && $request->filled('flat_id')) {
+            $newFlat = Flat::where('id', $request->flat_id)
+                ->whereHas('apartment', function ($query) use ($manager) {
+                    $query->where('manager_id', $manager->id);
+                })
+                ->first();
+
+            if (!$newFlat) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are not authorized to use this flat.',
+                ], 403);
+            }
+
+            if (
+                $newFlat->id !== $tenant->flat_id &&
+                $newFlat->tenant()->exists()
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The selected flat already has a tenant.',
+                ], 422);
+            }
+        }
+
+        $updateData = [];
+
+        foreach ([
             'user_id',
             'flat_id',
             'move_in_date',
             'lease_start',
             'lease_end',
-        ]));
+        ] as $field) {
+            if ($request->has($field)) {
+                $updateData[$field] = $request->input($field);
+            }
+        }
 
         /*
-         * Keep flat occupancy status synchronized.
+         * If the flat assignment changes, retain the authenticated manager
+         * as the temporary ownership record.
          */
-        if ($request->has('flat_id') && $request->flat_id != $oldFlatId) {
-            Flat::where('id', $oldFlatId)->update([
-                'status' => 'vacant',
-            ]);
+        if ($request->has('flat_id')) {
+            $updateData['manager_id'] = $manager->id;
+        }
 
-            Flat::where('id', $request->flat_id)->update([
-                'status' => 'occupied',
-            ]);
+        $tenant->update($updateData);
+
+        /*
+         * Synchronize flat occupancy whenever the assigned flat changes.
+         */
+        if (
+            $request->has('flat_id') &&
+            $request->input('flat_id') != $oldFlatId
+        ) {
+            if ($oldFlatId) {
+                Flat::where('id', $oldFlatId)->update([
+                    'status' => 'vacant',
+                ]);
+            }
+
+            if ($newFlat) {
+                $newFlat->update([
+                    'status' => 'occupied',
+                ]);
+            }
         }
 
         $tenant->load([
             'user',
             'flat.apartment',
+            'manager',
         ]);
 
         return response()->json([
@@ -281,9 +370,6 @@ class ManagerTenantController extends Controller
         ]);
     }
 
-    /**
-     * Delete a manager-owned tenant.
-     */
     public function destroy(Request $request, Tenant $tenant)
     {
         if (!$this->ownsTenant($request, $tenant)) {
@@ -295,16 +381,9 @@ class ManagerTenantController extends Controller
 
         $flat = $tenant->flat;
 
-        /*
-         * Delete related records first so we don't leave
-         * orphaned tenant data.
-         */
         $tenant->rentPayments()->delete();
         $tenant->utilityBills()->delete();
 
-        /*
-         * Complaints may have maintenance requests.
-         */
         foreach ($tenant->complaints as $complaint) {
             $complaint->maintenanceRequests()->delete();
             $complaint->delete();
@@ -313,7 +392,7 @@ class ManagerTenantController extends Controller
         $tenant->delete();
 
         /*
-         * Once the tenant is removed, the flat becomes vacant.
+         * A released tenant flat becomes vacant.
          */
         if ($flat) {
             $flat->update([
@@ -328,14 +407,26 @@ class ManagerTenantController extends Controller
     }
 
     /**
-     * Verify that the tenant belongs to the authenticated manager.
+     * Determine whether the authenticated manager owns this tenant.
+     *
+     * Assigned tenants:
+     *   tenant -> flat -> apartment -> manager
+     *
+     * Unassigned tenants:
+     *   tenant -> manager_id
      */
     private function ownsTenant(Request $request, Tenant $tenant): bool
     {
-        return $tenant->flat()
-            ->whereHas('apartment', function ($query) use ($request) {
-                $query->where('manager_id', $request->user()->id);
-            })
-            ->exists();
+        $managerId = $request->user()->id;
+
+        if ($tenant->flat_id !== null) {
+            return $tenant->flat()
+                ->whereHas('apartment', function ($query) use ($managerId) {
+                    $query->where('manager_id', $managerId);
+                })
+                ->exists();
+        }
+
+        return (int) $tenant->manager_id === (int) $managerId;
     }
 }

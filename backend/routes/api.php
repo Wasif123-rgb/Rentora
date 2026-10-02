@@ -145,7 +145,7 @@ Route::middleware('auth:sanctum')->group(function () {
         | Remove payment method
         */
 
-         Route::delete('/{paymentMethod}', [
+        Route::delete('/{paymentMethod}', [
             PaymentMethodController::class,
             'deletePaymentMethod',
         ]);
@@ -290,6 +290,33 @@ Route::middleware('auth:sanctum')->group(function () {
             'manager/flats',
             ManagerFlatController::class
         )->names('flats');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tenant Onboarding
+        |--------------------------------------------------------------------------
+        |
+        | Find already-registered tenant users who have not yet been
+        | assigned a Tenant record.
+        |
+        */
+
+        Route::get('/manager/eligible-tenants', [
+            ManagerTenantController::class,
+            'eligibleTenants',
+        ]);
+
+        /*
+        | Onboard an existing tenant user.
+        |
+        | A flat/property is optional at this stage.
+        */
+
+        Route::post('/manager/tenants/onboard', [
+            ManagerTenantController::class,
+            'onboard',
+        ]);
 
 
         /*

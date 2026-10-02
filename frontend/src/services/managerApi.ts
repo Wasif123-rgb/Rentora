@@ -14,7 +14,6 @@ import type {
   ListResponse,
 } from '../types/managerRecords';
 
-
 /*
 |--------------------------------------------------------------------------
 | Dashboard
@@ -23,30 +22,23 @@ import type {
 
 export interface ManagerDashboardResponse {
   success: boolean;
-
   data: {
     total_apartments: number;
     total_flats: number;
     occupied_flats: number;
     vacant_flats: number;
-
     occupancy_percentage: number;
-
     expected_monthly_rent: number;
-
     pending_payments: number;
     overdue_payments: number;
-
     open_complaints: number;
     active_maintenance_requests: number;
-
     featured_property: {
       id: number;
       name: string;
       address: string;
       flat_count: number;
     } | null;
-
     items_requiring_attention: {
       type: string;
       message: string;
@@ -60,7 +52,6 @@ export async function getManagerDashboard() {
     '/manager/dashboard'
   );
 }
-
 
 /*
 |--------------------------------------------------------------------------
@@ -81,13 +72,10 @@ export async function createManagerApartment(
     success: boolean;
     message?: string;
     data: Apartment;
-  }>(
-    '/manager/apartments',
-    {
-      method: 'POST',
-      body: JSON.stringify(values),
-    }
-  );
+  }>('/manager/apartments', {
+    method: 'POST',
+    body: JSON.stringify(values),
+  });
 }
 
 export async function updateManagerApartment(
@@ -98,13 +86,10 @@ export async function updateManagerApartment(
     success: boolean;
     message?: string;
     data: Apartment;
-  }>(
-    `/manager/apartments/${id}`,
-    {
-      method: 'PUT',
-      body: JSON.stringify(values),
-    }
-  );
+  }>(`/manager/apartments/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(values),
+  });
 }
 
 export async function deleteManagerApartment(
@@ -113,28 +98,14 @@ export async function deleteManagerApartment(
   return apiRequest<{
     success: boolean;
     message?: string;
-  }>(
-    `/manager/apartments/${id}`,
-    {
-      method: 'DELETE',
-    }
-  );
+  }>(`/manager/apartments/${id}`, {
+    method: 'DELETE',
+  });
 }
-
 
 /*
 |--------------------------------------------------------------------------
 | Flats
-|--------------------------------------------------------------------------
-|
-| These fields MUST match Laravel:
-|
-| apartment_id
-| flat_number
-| floor
-| rent_amount
-| status
-|
 |--------------------------------------------------------------------------
 */
 
@@ -151,24 +122,16 @@ export async function createManagerFlat(
     success: boolean;
     message?: string;
     data: Flat;
-  }>(
-    '/manager/flats',
-    {
-      method: 'POST',
-
-      /*
-       * Send exactly what Laravel ManagerFlatController
-       * expects.
-       */
-      body: JSON.stringify({
-        apartment_id: values.apartment_id,
-        flat_number: values.flat_number,
-        floor: values.floor,
-        rent_amount: values.rent_amount,
-        status: values.status,
-      }),
-    }
-  );
+  }>('/manager/flats', {
+    method: 'POST',
+    body: JSON.stringify({
+      apartment_id: values.apartment_id,
+      flat_number: values.flat_number,
+      floor: values.floor,
+      rent_amount: values.rent_amount,
+      status: values.status,
+    }),
+  });
 }
 
 export async function updateManagerFlat(
@@ -179,20 +142,16 @@ export async function updateManagerFlat(
     success: boolean;
     message?: string;
     data: Flat;
-  }>(
-    `/manager/flats/${id}`,
-    {
-      method: 'PUT',
-
-      body: JSON.stringify({
-        apartment_id: values.apartment_id,
-        flat_number: values.flat_number,
-        floor: values.floor,
-        rent_amount: values.rent_amount,
-        status: values.status,
-      }),
-    }
-  );
+  }>(`/manager/flats/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      apartment_id: values.apartment_id,
+      flat_number: values.flat_number,
+      floor: values.floor,
+      rent_amount: values.rent_amount,
+      status: values.status,
+    }),
+  });
 }
 
 export async function deleteManagerFlat(
@@ -201,14 +160,10 @@ export async function deleteManagerFlat(
   return apiRequest<{
     success: boolean;
     message?: string;
-  }>(
-    `/manager/flats/${id}`,
-    {
-      method: 'DELETE',
-    }
-  );
+  }>(`/manager/flats/${id}`, {
+    method: 'DELETE',
+  });
 }
-
 
 /*
 |--------------------------------------------------------------------------
@@ -222,25 +177,60 @@ export interface ManagerTenant {
   name: string;
 
   email?: string | null;
+
   phone?: string | null;
 
   flat?: string | null;
+
   flatNumber?: string | null;
 
   apartment?: string | null;
+
   apartmentName?: string | null;
 
   contact?: string | null;
 
   lease?: string | null;
+
   leasePeriod?: string | null;
 
   rentStatus?: string | null;
+
   accountStatus?: string | null;
 
   monthlyRent?: number | null;
 
   [key: string]: unknown;
+}
+
+export interface EligibleTenantUser {
+  id: RecordId;
+
+  name: string;
+
+  email: string;
+
+  phone?: string | null;
+}
+
+export interface TenantOnboardingValues {
+  user_id: RecordId;
+
+  flat_id?: RecordId | null;
+
+  move_in_date?: string | null;
+
+  lease_start?: string | null;
+
+  lease_end?: string | null;
+}
+
+export interface ManagerTenantResponse {
+  success: boolean;
+
+  message?: string;
+
+  data: Record<string, unknown>;
 }
 
 export async function getManagerTenants() {
@@ -249,6 +239,24 @@ export async function getManagerTenants() {
   );
 }
 
+export async function getManagerEligibleTenants() {
+  return apiRequest<{
+    success: boolean;
+    data: EligibleTenantUser[];
+  }>('/manager/eligible-tenants');
+}
+
+export async function onboardManagerTenant(
+  values: TenantOnboardingValues
+) {
+  return apiRequest<ManagerTenantResponse>(
+    '/manager/tenants/onboard',
+    {
+      method: 'POST',
+      body: JSON.stringify(values),
+    }
+  );
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -262,7 +270,6 @@ export async function getManagerRentPayments() {
   );
 }
 
-
 /*
 |--------------------------------------------------------------------------
 | Utility Bills
@@ -273,16 +280,21 @@ export interface ManagerUtilityBill {
   id: RecordId;
 
   tenantName?: string | null;
+
   tenant?: string | null;
 
   flatNumber?: string | null;
+
   flat?: string | null;
 
   apartmentName?: string | null;
+
   apartment?: string | null;
 
   electricity?: number | null;
+
   water?: number | null;
+
   gas?: number | null;
 
   month?: string | null;
@@ -290,6 +302,7 @@ export interface ManagerUtilityBill {
   total?: number | null;
 
   dueDate?: string | null;
+
   paidDate?: string | null;
 
   status: string;
@@ -310,7 +323,9 @@ export async function getManagerUtilityBills() {
 */
 
 export async function getManagerComplaints() {
-  return apiRequest<ListResponse<Complaint>>('/manager/complaints');
+  return apiRequest<ListResponse<Complaint>>(
+    '/manager/complaints'
+  );
 }
 
 export async function updateManagerComplaint(
@@ -326,7 +341,6 @@ export async function updateManagerComplaint(
     body: JSON.stringify(values),
   });
 }
-
 
 /*
 |--------------------------------------------------------------------------
@@ -347,13 +361,10 @@ export async function createManagerNotice(
     success: boolean;
     message?: string;
     data: Notice;
-  }>(
-    '/manager/notices',
-    {
-      method: 'POST',
-      body: JSON.stringify(values),
-    }
-  );
+  }>('/manager/notices', {
+    method: 'POST',
+    body: JSON.stringify(values),
+  });
 }
 
 export async function updateManagerNotice(
@@ -364,13 +375,10 @@ export async function updateManagerNotice(
     success: boolean;
     message?: string;
     data: Notice;
-  }>(
-    `/manager/notices/${id}`,
-    {
-      method: 'PUT',
-      body: JSON.stringify(values),
-    }
-  );
+  }>(`/manager/notices/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(values),
+  });
 }
 
 export async function deleteManagerNotice(
@@ -379,10 +387,7 @@ export async function deleteManagerNotice(
   return apiRequest<{
     success: boolean;
     message?: string;
-  }>(
-    `/manager/notices/${id}`,
-    {
-      method: 'DELETE',
-    }
-  );
+  }>(`/manager/notices/${id}`, {
+    method: 'DELETE',
+  });
 }
