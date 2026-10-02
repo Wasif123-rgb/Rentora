@@ -13,13 +13,14 @@ return new class extends Migration
          * Temporary manager ownership is needed for tenants who have
          * registered but have not selected/been assigned a property yet.
          */
-        Schema::table('tenants', function (Blueprint $table) {
-            $table->foreignId('manager_id')
-                ->nullable()
-                ->after('user_id')
-                ->constrained('users')
-                ->nullOnDelete();
-        });
+        if (! Schema::hasColumn('tenants', 'manager_id')) {
+            Schema::table('tenants', function (Blueprint $table) {
+                $table->foreignId('manager_id')
+                    ->nullable()
+                    ->constrained('users')
+                    ->nullOnDelete();
+            });
+        }
 
         /*
          * Preserve ownership for all existing tenants.
@@ -29,15 +30,24 @@ return new class extends Migration
          *
          * tenant -> flat -> apartment -> manager_id
          */
-        DB::statement('
-            UPDATE tenants
-            INNER JOIN flats
-                ON flats.id = tenants.flat_id
-            INNER JOIN apartments
-                ON apartments.id = flats.apartment_id
-            SET tenants.manager_id = apartments.manager_id
-            WHERE tenants.manager_id IS NULL
-        ');
+        $assignments = DB::table('tenants')
+            ->join('flats', 'flats.id', '=', 'tenants.flat_id')
+            ->join('apartments', 'apartments.id', '=', 'flats.apartment_id')
+            ->whereNull('tenants.manager_id')
+            ->select(
+                'tenants.id as tenant_id',
+                'apartments.manager_id'
+            )
+            ->get();
+
+        foreach ($assignments as $assignment) {
+            DB::table('tenants')
+                ->where('id', $assignment->tenant_id)
+                ->whereNull('manager_id')
+                ->update([
+                    'manager_id' => $assignment->manager_id,
+                ]);
+        }
 
         /*
          * New tenants may initially have no property and no lease dates.
@@ -64,36 +74,14 @@ return new class extends Migration
     public function down(): void
     {
         /*
-         * Do not allow rollback while unassigned tenants exist because
-         * their required flat/lease fields cannot safely be restored.
+         * Keep the nullable tenant assignment fields intact because rows
+         * created by this feature may legitimately contain null values.
          */
-        if (DB::table('tenants')->whereNull('flat_id')->exists()) {
-            throw new RuntimeException(
-                'Cannot rollback tenant assignment migration while unassigned tenants exist.'
-            );
+        if (Schema::hasColumn('tenants', 'manager_id')) {
+            Schema::table('tenants', function (Blueprint $table) {
+                $table->dropForeign(['manager_id']);
+                $table->dropColumn('manager_id');
+            });
         }
-
-        Schema::table('tenants', function (Blueprint $table) {
-            $table->dropForeign(['manager_id']);
-            $table->dropColumn('manager_id');
-        });
-
-        Schema::table('tenants', function (Blueprint $table) {
-            $table->unsignedBigInteger('flat_id')
-                ->nullable(false)
-                ->change();
-
-            $table->date('move_in_date')
-                ->nullable(false)
-                ->change();
-
-            $table->date('lease_start')
-                ->nullable(false)
-                ->change();
-
-            $table->date('lease_end')
-                ->nullable(false)
-                ->change();
-        });
     }
 };
