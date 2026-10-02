@@ -12,6 +12,7 @@ use App\Http\Controllers\ManagerMaintenanceRequestController;
 use App\Http\Controllers\ManagerNoticeController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\TenantDashboardController;
+use App\Http\Controllers\TenantResidenceController;
 use App\Http\Controllers\TenantRentPaymentController;
 use Illuminate\Support\Facades\Route;
 
@@ -177,6 +178,21 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/dashboard', [
                 TenantDashboardController::class,
                 'index',
+            ]);
+
+            Route::get('/available-apartments', [
+                TenantResidenceController::class,
+                'apartments',
+            ]);
+
+            Route::get('/apartments/{apartment}/available-flats', [
+                TenantResidenceController::class,
+                'flats',
+            ]);
+
+            Route::patch('/residence', [
+                TenantResidenceController::class,
+                'update',
             ]);
 
 

@@ -21,6 +21,7 @@ class TenantDashboardController extends Controller
 
         $tenant = Tenant::with([
             'user.role',
+            'manager',
             'flat.apartment',
             'rentPayments' => function ($query) {
                 $query->latest('payment_date')->latest('id');
@@ -46,6 +47,7 @@ class TenantDashboardController extends Controller
             return response()->json([
                 'success' => true,
                 'tenant' => $this->profileData($user),
+                'manager' => null,
                 'apartment' => null,
                 'flat' => null,
                 'tenancy' => null,
@@ -92,6 +94,13 @@ class TenantDashboardController extends Controller
             'success' => true,
 
             'tenant' => $this->tenantData($tenant),
+
+            'manager' => $tenant->manager ? [
+                'id' => $tenant->manager->id,
+                'name' => $tenant->manager->name,
+                'email' => $tenant->manager->email,
+                'phone' => $tenant->manager->phone,
+            ] : null,
 
             'apartment' => $tenant->flat?->apartment ? [
                 'id' => $tenant->flat->apartment->id,

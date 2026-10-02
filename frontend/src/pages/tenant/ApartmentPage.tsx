@@ -1,3 +1,13 @@
+import { useCallback, useEffect, useState } from "react";
+import { apiRequest } from "../../services/api";
+import {
+  assignResidence,
+  getAvailableApartments,
+  getAvailableFlats,
+  type AvailableApartment,
+  type AvailableFlat,
+} from "../../services/tenantResidenceApi";
+import type { TenantDashboardData } from "./TenantDashboard";
 import "./Tenant.css";
 
 interface ApartmentInfo {
@@ -26,17 +36,172 @@ interface ApartmentInfo {
   } | null;
 }
 
-interface ApartmentPageProps {
-  apartment?: ApartmentInfo | null;
+interface ApiError {
+  data?: {
+    message?: string;
+    errors?: Record<string, string[]>;
+  };
 }
 
-function ApartmentPage({ apartment = null }: ApartmentPageProps) {
+function errorMessage(error: unknown): string {
+  const apiError = error as ApiError;
+  const validationMessage = apiError.data?.errors
+    ? Object.values(apiError.data.errors)[0]?.[0]
+    : null;
+
+  return validationMessage || apiError.data?.message || "Something went wrong. Please try again.";
+}
+
+function formatDate(value: string | null): string | null {
+  if (!value) return null;
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00Z`));
+}
+
+function ApartmentPage() {
+  const [apartment, setApartment] = useState<ApartmentInfo | null>(null);
+  const [apartments, setApartments] = useState<AvailableApartment[]>([]);
+  const [flats, setFlats] = useState<AvailableFlat[]>([]);
+  const [selectedApartmentId, setSelectedApartmentId] = useState("");
+  const [selectedFlatId, setSelectedFlatId] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadingFlats, setLoadingFlats] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadApartment = useCallback(async () => {
+    const dashboard = await apiRequest<TenantDashboardData>("/tenant/dashboard");
+
+    if (!dashboard.apartment || !dashboard.flat) {
+      setApartment(null);
+      return false;
+    }
+
+    const leaseDetails = [
+      ["Move-in Date", formatDate(dashboard.tenancy?.move_in_date ?? null)],
+      ["Lease Start", formatDate(dashboard.tenancy?.lease_start ?? null)],
+      ["Lease End", formatDate(dashboard.tenancy?.lease_end ?? null)],
+    ]
+      .filter((item): item is [string, string] => Boolean(item[1]))
+      .map(([label, value]) => ({ label, value }));
+
+    setApartment({
+      propertyName: dashboard.apartment.name,
+      block: dashboard.apartment.address,
+      flat: `Flat ${dashboard.flat.flat_number}`,
+      tenantName: dashboard.tenant.name,
+      occupancy: dashboard.flat.status === "occupied" ? "Occupied" : "Vacant",
+      leaseStatus: dashboard.tenancy?.lease_start ? "Active" : "Not provided",
+      monthlyRent: `৳${Number(dashboard.flat.rent_amount).toLocaleString()}`,
+      apartmentDetails: [
+        { label: "Property", value: dashboard.apartment.name },
+        { label: "Address", value: dashboard.apartment.address },
+        { label: "Flat / Unit", value: dashboard.flat.flat_number },
+        { label: "Floor", value: String(dashboard.flat.floor) },
+      ],
+      leaseDetails,
+      management: dashboard.manager
+        ? {
+            name: dashboard.manager.name,
+            office: "Property Manager",
+            phone: dashboard.manager.phone,
+            email: dashboard.manager.email,
+            address: dashboard.apartment.address,
+          }
+        : null,
+    });
+
+    return true;
+  }, []);
+
+  useEffect(() => {
+    const loadPage = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const hasResidence = await loadApartment();
+
+        if (!hasResidence) {
+          const response = await getAvailableApartments();
+          setApartments(response.data);
+        }
+      } catch (loadError) {
+        setError(errorMessage(loadError));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadPage();
+  }, [loadApartment]);
+
+  const handleApartmentChange = async (apartmentId: string) => {
+    setSelectedApartmentId(apartmentId);
+    setSelectedFlatId("");
+    setFlats([]);
+    setMessage(null);
+    setError(null);
+
+    if (!apartmentId) return;
+
+    try {
+      setLoadingFlats(true);
+      const response = await getAvailableFlats(Number(apartmentId));
+      setFlats(response.data);
+    } catch (loadError) {
+      setError(errorMessage(loadError));
+    } finally {
+      setLoadingFlats(false);
+    }
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!selectedApartmentId || !selectedFlatId) return;
+
+    try {
+      setSubmitting(true);
+      setError(null);
+      setMessage(null);
+      const response = await assignResidence(
+        Number(selectedApartmentId),
+        Number(selectedFlatId)
+      );
+      setMessage(response.message);
+      await loadApartment();
+    } catch (submitError) {
+      setError(errorMessage(submitError));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const hasApartment = Boolean(apartment);
 
   const apartmentDetails = apartment?.apartmentDetails ?? [];
   const leaseDetails = apartment?.leaseDetails ?? [];
   const amenities = apartment?.amenities ?? [];
   const management = apartment?.management;
+
+  if (loading) {
+    return (
+      <main className="page-dark">
+        <div className="tenant-page-shell">
+          <section className="tenant-panel">
+            <p>Loading your apartment...</p>
+          </section>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="page-dark">
@@ -157,6 +322,81 @@ function ApartmentPage({ apartment = null }: ApartmentPageProps) {
             </div>
           </div>
         </section>
+
+        {!hasApartment && (
+          <section className="tenant-panel tenant-panel--form tenant-residence-selector">
+            <div className="tenant-panel__header">
+              <div>
+                <span className="tenant-panel__eyebrow">Choose Your Home</span>
+                <h3>Select Your Residence</h3>
+              </div>
+            </div>
+
+            {message && <div className="tenant-success-banner">{message}</div>}
+            {error && <div className="tenant-error-banner">{error}</div>}
+
+            {apartments.length === 0 ? (
+              <div className="tenant-empty-state tenant-empty-state--wide">
+                <i className="bi bi-buildings" aria-hidden="true" />
+                <p>No apartments are currently available from your property manager.</p>
+              </div>
+            ) : (
+              <form className="tenant-form" onSubmit={handleSubmit}>
+                <div className="tenant-form__grid">
+                  <label className="tenant-field">
+                    <span>Apartment</span>
+                    <select
+                      value={selectedApartmentId}
+                      onChange={(event) => void handleApartmentChange(event.target.value)}
+                      disabled={submitting}
+                    >
+                      <option value="">Select Apartment</option>
+                      {apartments.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name} — {item.address}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="tenant-field">
+                    <span>Flat / Unit</span>
+                    <select
+                      value={selectedFlatId}
+                      onChange={(event) => setSelectedFlatId(event.target.value)}
+                      disabled={!selectedApartmentId || loadingFlats || submitting}
+                    >
+                      <option value="">
+                        {loadingFlats ? "Loading vacant flats..." : "Select Flat"}
+                      </option>
+                      {flats.map((flat) => (
+                        <option key={flat.id} value={flat.id}>
+                          {flat.flat_number} — Floor {flat.floor} — ৳{Number(flat.rent_amount).toLocaleString()}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                {selectedApartmentId && !loadingFlats && flats.length === 0 && (
+                  <p className="tenant-form__help">
+                    No vacant flats are currently available in this apartment.
+                  </p>
+                )}
+
+                <div className="tenant-actions-row">
+                  <button
+                    type="submit"
+                    className="btn btn-rentora"
+                    disabled={!selectedFlatId || submitting}
+                  >
+                    {submitting ? "Confirming..." : "Confirm Residence"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </section>
+        )}
 
         <div className="tenant-two-column-layout">
           <section className="tenant-panel">

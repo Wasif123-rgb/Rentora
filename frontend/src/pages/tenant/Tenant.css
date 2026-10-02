@@ -1698,6 +1698,19 @@ textarea {
   color: #a7f3d0;
 }
 
+.tenant-error-banner {
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  border-radius: 14px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  color: #fecaca;
+}
+
+.tenant-residence-selector {
+  margin-bottom: 24px;
+}
+
 .tenant-support-card {
   display: grid;
   gap: 16px;

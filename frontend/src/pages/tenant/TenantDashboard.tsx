@@ -24,6 +24,13 @@ export interface TenantDashboardData {
     address: string;
   } | null;
 
+  manager: {
+    id: number;
+    name: string;
+    email: string;
+    phone: string | null;
+  } | null;
+
   flat: {
     id: number;
     flat_number: string;
