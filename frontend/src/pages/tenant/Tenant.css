@@ -2801,3 +2801,664 @@ textarea {
       0;
   }
 }
+
+/* =========================================================
+   COMPLAINT HISTORY PAGE
+   ========================================================= */
+
+.tenant-complaints-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* =========================================================
+   SUBTITLE
+   ========================================================= */
+
+.tenant-panel__subtitle {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   COMPLAINT COUNT
+   ========================================================= */
+
+.tenant-complaints-count {
+  min-width: 90px;
+  padding: 10px 16px;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.035);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+}
+
+.tenant-complaints-count strong {
+  color: #ffffff;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.tenant-complaints-count span {
+  margin-top: 5px;
+
+  color: rgba(255, 255, 255, 0.5);
+
+  font-size: 11px;
+}
+
+/* =========================================================
+   TABLE WRAPPER
+   ========================================================= */
+
+.tenant-table-wrapper {
+  width: 100%;
+
+  overflow-x: auto;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+
+  scrollbar-width: thin;
+}
+
+.tenant-table-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+
+.tenant-table-wrapper::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tenant-table-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+}
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.tenant-complaints-table {
+  width: 100%;
+  min-width: 1080px;
+
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.tenant-complaints-table thead th {
+  padding: 14px 18px;
+
+  background: rgba(255, 255, 255, 0.025);
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+
+  color: rgba(255, 255, 255, 0.43);
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 0.08em;
+
+  text-transform: uppercase;
+
+  text-align: left;
+
+  white-space: nowrap;
+}
+
+.tenant-complaints-table tbody td {
+  padding: 16px 18px;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+
+  vertical-align: middle;
+}
+
+.tenant-complaints-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* =========================================================
+   TABLE ROW
+   ========================================================= */
+
+.tenant-complaint-row {
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.tenant-complaint-row:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.tenant-complaint-row.selected {
+  background: rgba(255, 255, 255, 0.055);
+
+  box-shadow:
+    inset 3px 0 0 rgba(255, 255, 255, 0.7);
+}
+
+/* =========================================================
+   COMPLAINT COLUMN
+   ========================================================= */
+
+.tenant-complaint-table-title {
+  width: 320px;
+  max-width: 320px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.tenant-complaint-table-id {
+  color: rgba(255, 255, 255, 0.38);
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 0.04em;
+}
+
+.tenant-complaint-table-title strong {
+  display: block;
+
+  overflow: hidden;
+
+  color: rgba(255, 255, 255, 0.92);
+
+  font-size: 13px;
+  font-weight: 600;
+
+  line-height: 1.4;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tenant-complaint-table-description {
+  display: block;
+
+  max-width: 300px;
+
+  overflow: hidden;
+
+  color: rgba(255, 255, 255, 0.38);
+
+  font-size: 11px;
+
+  line-height: 1.4;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   CATEGORY
+   ========================================================= */
+
+.tenant-table-category {
+  display: inline-flex;
+
+  align-items: center;
+
+  padding: 5px 9px;
+
+  border: 1px solid rgba(255, 255, 255, 0.07);
+
+  border-radius: 6px;
+
+  background: rgba(255, 255, 255, 0.045);
+
+  color: rgba(255, 255, 255, 0.68);
+
+  font-size: 11px;
+
+  white-space: nowrap;
+}
+
+/* =========================================================
+   UNIT
+   ========================================================= */
+
+.tenant-table-unit {
+  color: rgba(255, 255, 255, 0.68);
+
+  font-size: 12px;
+
+  white-space: nowrap;
+}
+
+/* =========================================================
+   DATE
+   ========================================================= */
+
+.tenant-table-date {
+  color: rgba(255, 255, 255, 0.5);
+
+  font-size: 11px;
+
+  white-space: nowrap;
+}
+
+/* =========================================================
+   STATUS BADGE
+   ========================================================= */
+
+.tenant-status-badge {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  padding: 6px 10px;
+
+  border: 1px solid rgba(255, 255, 255, 0.07);
+
+  border-radius: 999px;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  line-height: 1;
+
+  white-space: nowrap;
+}
+
+.tenant-status-badge--large {
+  padding: 8px 13px;
+
+  font-size: 11px;
+}
+
+.tenant-status-dot {
+  width: 6px;
+  height: 6px;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: currentColor;
+}
+
+/* Open */
+
+.tenant-status-badge--open {
+  color: #f59e0b;
+
+  background: rgba(245, 158, 11, 0.09);
+}
+
+/* In Progress */
+
+.tenant-status-badge--in-progress {
+  color: #60a5fa;
+
+  background: rgba(96, 165, 250, 0.09);
+}
+
+/* Resolved */
+
+.tenant-status-badge--resolved {
+  color: #4ade80;
+
+  background: rgba(74, 222, 128, 0.09);
+}
+
+/* Closed */
+
+.tenant-status-badge--closed {
+  color: #a1a1aa;
+
+  background: rgba(161, 161, 170, 0.09);
+}
+
+/* =========================================================
+   PRIORITY
+   ========================================================= */
+
+.tenant-priority-badge {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  color: rgba(255, 255, 255, 0.65);
+
+  font-size: 11px;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.tenant-priority-dot {
+  width: 6px;
+  height: 6px;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: currentColor;
+}
+
+.tenant-priority-badge--low {
+  color: #94a3b8;
+}
+
+.tenant-priority-badge--normal {
+  color: #60a5fa;
+}
+
+.tenant-priority-badge--high {
+  color: #f59e0b;
+}
+
+.tenant-priority-badge--urgent {
+  color: #f87171;
+}
+
+/* =========================================================
+   DETAILS PANEL
+   ========================================================= */
+
+.tenant-complaint-details-panel {
+  overflow: hidden;
+}
+
+.tenant-complaint-detail-id {
+  display: inline-block;
+
+  margin-top: 6px;
+
+  color: rgba(255, 255, 255, 0.38);
+
+  font-size: 11px;
+}
+
+/* =========================================================
+   DETAILS GRID
+   ========================================================= */
+
+.tenant-complaint-info-grid {
+  display: grid;
+
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  gap: 10px;
+
+  padding-bottom: 22px;
+}
+
+.tenant-complaint-info-card {
+  min-height: 68px;
+
+  padding: 13px 15px;
+
+  border: 1px solid rgba(255, 255, 255, 0.07);
+
+  border-radius: 9px;
+
+  background: rgba(255, 255, 255, 0.025);
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  gap: 6px;
+}
+
+.tenant-complaint-info-card > span {
+  color: rgba(255, 255, 255, 0.38);
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.06em;
+
+  text-transform: uppercase;
+}
+
+.tenant-complaint-info-card > strong {
+  color: rgba(255, 255, 255, 0.88);
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* =========================================================
+   CONTENT BLOCKS
+   ========================================================= */
+
+.tenant-complaint-content-block {
+  padding-top: 20px;
+
+  margin-top: 20px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.tenant-complaint-content-heading {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  margin-bottom: 11px;
+}
+
+.tenant-complaint-content-heading i {
+  color: rgba(255, 255, 255, 0.45);
+
+  font-size: 14px;
+}
+
+.tenant-complaint-content-heading h4 {
+  margin: 0;
+
+  color: rgba(255, 255, 255, 0.8);
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* =========================================================
+   DESCRIPTION
+   ========================================================= */
+
+.tenant-complaint-description-box {
+  padding: 15px 17px;
+
+  border: 1px solid rgba(255, 255, 255, 0.07);
+
+  border-radius: 9px;
+
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.tenant-complaint-description-box p {
+  margin: 0;
+
+  color: rgba(255, 255, 255, 0.62);
+
+  font-size: 12px;
+
+  line-height: 1.7;
+}
+
+/* =========================================================
+   TIMELINE
+   ========================================================= */
+
+.tenant-complaint-timeline {
+  display: flex;
+
+  flex-direction: column;
+}
+
+.tenant-complaint-timeline-item {
+  display: flex;
+
+  gap: 13px;
+
+  position: relative;
+}
+
+.tenant-complaint-timeline-marker {
+  position: relative;
+
+  width: 18px;
+
+  flex-shrink: 0;
+
+  display: flex;
+
+  justify-content: center;
+}
+
+.tenant-complaint-timeline-marker::after {
+  content: "";
+
+  position: absolute;
+
+  top: 13px;
+  bottom: -18px;
+
+  width: 1px;
+
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tenant-complaint-timeline-item:last-child
+  .tenant-complaint-timeline-marker::after {
+  display: none;
+}
+
+.tenant-complaint-timeline-marker span {
+  width: 8px;
+  height: 8px;
+
+  margin-top: 9px;
+
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.55);
+
+  position: relative;
+
+  z-index: 1;
+}
+
+.tenant-complaint-timeline-content {
+  padding-bottom: 18px;
+}
+
+.tenant-complaint-timeline-content span {
+  color: rgba(255, 255, 255, 0.38);
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.05em;
+
+  text-transform: uppercase;
+}
+
+.tenant-complaint-timeline-content p {
+  margin: 4px 0 0;
+
+  color: rgba(255, 255, 255, 0.62);
+
+  font-size: 12px;
+
+  line-height: 1.6;
+}
+
+/* =========================================================
+   ATTACHMENTS
+   ========================================================= */
+
+.tenant-complaint-attachments-empty {
+  min-height: 65px;
+
+  padding: 15px;
+
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+
+  border-radius: 9px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 8px;
+
+  color: rgba(255, 255, 255, 0.4);
+
+  font-size: 11px;
+}
+
+.tenant-complaint-attachments-empty i {
+  font-size: 14px;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .tenant-complaint-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .tenant-panel__header--split {
+    align-items: flex-start;
+
+    gap: 15px;
+  }
+
+  .tenant-complaints-count {
+    min-width: 75px;
+
+    padding: 8px 12px;
+  }
+
+  .tenant-complaint-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tenant-complaint-details-panel {
+    padding: 18px;
+  }
+
+  .tenant-panel__subtitle {
+    font-size: 12px;
+  }
+}
+
