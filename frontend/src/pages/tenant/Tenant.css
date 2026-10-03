@@ -3500,10 +3500,6 @@ textarea {
     max-width: 100%;
   }
 
-  .tenant-shell {
-    grid-template-columns: 180px minmax(0, 1fr) !important;
-  }
-
   .tenant-overview {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -3562,16 +3558,28 @@ textarea {
   .tenant-dashboard-container {
     width: 100%;
     padding: 0;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .tenant-shell {
     width: 100%;
+    grid-template-columns: 1fr !important;
   }
 
   .tenant-shell__content {
     width: 100%;
     min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
   }
+  .tenant-shell__page {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
 
   .tenant-page-shell {
     width: 100%;
