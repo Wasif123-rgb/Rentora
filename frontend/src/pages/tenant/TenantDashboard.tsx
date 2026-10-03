@@ -150,7 +150,7 @@ function TenantDashboard() {
   if (loading) {
     return (
       <main className="page-dark">
-        <div className="container-fluid px-4 py-4">
+        <div className="tenant-dashboard-container">
           <div className="dashboard-card">
             <p>Loading your dashboard...</p>
           </div>
@@ -186,7 +186,7 @@ function TenantDashboard() {
 
   return (
     <main className="page-dark">
-      <div className="container-fluid px-4 py-4">
+      <div className="tenant-dashboard-container">
         <TenantOverviewSection dashboard={dashboard} />
       </div>
     </main>
