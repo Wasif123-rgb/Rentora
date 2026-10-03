@@ -51,6 +51,43 @@ function TenantLayout() {
   const location = useLocation();
   const [isDrawerOpen, setDrawerOpen] = useState(false);
 
+  const meta = useMemo(() => {
+    const path = location.pathname;
+
+    return (
+      routeMetaMap[path] ?? {
+        title: "Tenant Portal",
+        subtitle: "",
+      }
+    );
+  }, [location.pathname]);
+
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setDrawerOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", onKey);
+
+    return () => {
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = isDrawerOpen ? "hidden" : "";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isDrawerOpen]);
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -62,45 +99,6 @@ function TenantLayout() {
   if (user.role !== "tenant") {
     return <Navigate to="/manager/dashboard" replace />;
   }
-
-  const meta = useMemo(() => {
-    const path = location.pathname;
-
-    return (
-      routeMetaMap[path] ?? {
-        title: "Tenant Portal",
-        subtitle: "",
-      }
-    );
-  }, [location]);
-
-  useEffect(() => {
-    if (!isDrawerOpen) return;
-
-    const t = window.setTimeout(() => setDrawerOpen(false), 0);
-
-    return () => window.clearTimeout(t);
-  }, [location.pathname, isDrawerOpen]);
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setDrawerOpen(false);
-      }
-    }
-
-    document.addEventListener("keydown", onKey);
-
-    return () => document.removeEventListener("keydown", onKey);
-  }, []);
-
-  useEffect(() => {
-    document.body.style.overflow = isDrawerOpen ? "hidden" : "";
-
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isDrawerOpen]);
 
   return (
     <div
