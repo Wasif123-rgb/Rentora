@@ -121,6 +121,7 @@ jobs:
           cd "$HOME/laravel"
 
           php artisan migrate --force
+          php artisan db:seed --force
           php artisan optimize
 
           rm -rf "$HOME/laravel-release"
