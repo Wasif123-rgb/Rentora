@@ -3461,153 +3461,375 @@ textarea {
     font-size: 12px;
   }
 }
-
 /* =========================================================
-   TENANT DASHBOARD NOTICE BOARD
+   TENANT DASHBOARD - RESPONSIVE FIX
    ========================================================= */
 
-.notice-card {
+.tenant-dashboard-container {
   width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0;
   min-width: 0;
 }
 
-.notice-card .notice-list {
-  display: grid;
-  gap: 12px;
-}
-
-.notice-card .notice-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-
+/* Prevent dashboard sections from creating page-level overflow */
+.page-dark {
   width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.tenant-shell,
+.tenant-shell__content,
+.tenant-page-shell,
+.tenant-dashboard-container {
   min-width: 0;
-
-  padding: 16px;
-
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 16px;
 }
 
-.notice-card .notice-icon {
-  width: 38px;
-  height: 38px;
+/* =========================================================
+   TABLET
+   ========================================================= */
 
-  flex: 0 0 38px;
-
-  display: grid;
-  place-items: center;
-
-  border-radius: 12px;
-
-  background: rgba(96, 165, 250, 0.12);
-  border: 1px solid rgba(96, 165, 250, 0.2);
-
-  color: #93c5fd;
-}
-
-.notice-card .notice-content {
-  flex: 1;
-  min-width: 0;
-
-  display: grid;
-  gap: 7px;
-}
-
-.notice-card .notice-content-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.notice-card .notice-content-top strong {
-  color: #ffffff;
-  font-size: 0.92rem;
-  line-height: 1.4;
-}
-
-.notice-card .notice-content p {
-  margin: 0;
-
-  color: #9fb2da;
-  font-size: 0.82rem;
-  line-height: 1.6;
-
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.notice-card .notice-tag {
-  flex-shrink: 0;
-
-  color: #93c5fd;
-
-  font-size: 0.68rem;
-  font-weight: 700;
-
-  white-space: nowrap;
-}
-
-.notice-card .notice-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  color: #64748b;
-  font-size: 0.72rem;
-}
-
-.notice-card .notice-meta span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.notice-card .notice-meta i {
-  color: #93c5fd;
-}
-
-.notice-empty {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  padding: 18px;
-
-  border: 1px dashed rgba(148, 163, 184, 0.2);
-  border-radius: 16px;
-
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.notice-empty > i {
-  font-size: 1.3rem;
-  color: #93c5fd;
-}
-
-.notice-empty div {
-  display: grid;
-  gap: 3px;
-}
-
-.notice-empty strong {
-  color: #f8fafc;
-}
-
-.notice-empty small {
-  color: #94a3b8;
-}
-
-@media (max-width: 799px) {
-  .notice-card .notice-content-top {
-    display: grid;
-    gap: 5px;
+@media (max-width: 1199px) {
+  .page-dark {
+    padding: 24px 20px 32px;
   }
 
-  .notice-card .notice-tag {
-    justify-self: start;
+  .tenant-dashboard-container {
+    max-width: 100%;
+  }
+
+  .tenant-shell {
+    grid-template-columns: 180px minmax(0, 1fr) !important;
+  }
+
+  .tenant-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tenant-page-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tenant-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tenant-profile-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tenant-profile-card__meta {
+    width: 100%;
+  }
+
+  .tenant-two-column-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tenant-support-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tenant-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tenant-quick-actions-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tenant-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tenant-form__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 799px) {
+  .page-dark {
+    padding: 16px 12px 24px;
+  }
+
+  .tenant-dashboard-container {
+    width: 100%;
+    padding: 0;
+  }
+
+  .tenant-shell {
+    display: block !important;
+    width: 100%;
+  }
+
+  .tenant-shell__content {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .tenant-page-shell {
+    width: 100%;
+    max-width: 100%;
+    gap: 16px;
+  }
+
+  /* Hero */
+  .tenant-hero,
+  .tenant-page-hero,
+  .tenant-support-hero {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    min-width: 0;
+    padding: 24px 20px;
+    gap: 20px;
+  }
+
+  .tenant-hero__meta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  /* Statistics */
+  .tenant-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .tenant-stat-card {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .tenant-stat-card__value {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* Main grids */
+  .tenant-overview,
+  .tenant-two-column-layout {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .tenant-support-grid,
+  .tenant-info-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tenant-quick-actions-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Cards */
+  .tenant-support-card,
+  .tenant-quick-action,
+  .tenant-profile-card {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Forms */
+  .tenant-form__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tenant-form__field,
+  .tenant-form__group {
+    min-width: 0;
+    width: 100%;
+  }
+
+  /* Search / controls */
+  .tenant-search,
+  .tenant-search-box {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .tenant-toggle-row {
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  /* Long text */
+  .tenant-notice-topline {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .tenant-notice-date {
+    white-space: normal;
+  }
+
+  /* Tables stay scrollable INSIDE their wrapper */
+  .tenant-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tenant-data-table,
+  .tenant-complaints-table {
+    width: max-content;
+    min-width: 760px;
+  }
+
+  .tenant-complaints-table {
+    min-width: 1000px;
+  }
+
+  /* Buttons */
+  .tenant-actions,
+  .tenant-action-buttons {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  /* Invoice modal */
+  .tenant-modal-overlay {
+    padding: 12px;
+  }
+
+  .tenant-modal,
+  .tenant-invoice-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 94vh;
+    border-radius: 20px;
+  }
+}
+
+/* =========================================================
+   SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 480px) {
+  .page-dark {
+    padding: 12px 8px 20px;
+  }
+
+  .tenant-dashboard-container {
+    width: 100%;
+  }
+
+  .tenant-page-shell {
+    gap: 12px;
+  }
+
+  .tenant-hero,
+  .tenant-page-hero,
+  .tenant-support-hero {
+    padding: 20px 16px;
+    border-radius: 18px;
+  }
+
+  .tenant-stats-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .tenant-quick-actions-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tenant-info-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tenant-support-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tenant-profile-card {
+    padding: 18px 16px;
+  }
+
+  .tenant-profile-card__meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tenant-form__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tenant-actions,
+  .tenant-action-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tenant-actions button,
+  .tenant-action-buttons button {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .tenant-notice-topline {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  /* Keep large tables usable through horizontal scrolling */
+  .tenant-data-table {
+    min-width: 720px;
+  }
+
+  .tenant-complaints-table {
+    min-width: 900px;
+  }
+
+  .tenant-modal-overlay {
+    padding: 8px;
+  }
+
+  .tenant-modal,
+  .tenant-invoice-modal {
+    border-radius: 16px;
+  }
+}
+
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 360px) {
+  .page-dark {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .tenant-hero,
+  .tenant-page-hero,
+  .tenant-support-hero {
+    padding: 18px 14px;
+  }
+
+  .tenant-profile-card {
+    padding: 16px 14px;
+  }
+
+  .tenant-stat-card {
+    padding: 14px;
+  }
+
+  .tenant-data-table {
+    min-width: 680px;
+  }
+
+  .tenant-complaints-table {
+    min-width: 860px;
   }
 }
